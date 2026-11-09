@@ -5,8 +5,8 @@ import (
 	"math"
 	"net"
 
-	"github.com/go-gost/core/bypass"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/bypass"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 )
 
 const (

@@ -3,8 +3,8 @@ package registry
 import (
 	"context"
 
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/hop"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/hop"
 )
 
 type hopRegistry struct {

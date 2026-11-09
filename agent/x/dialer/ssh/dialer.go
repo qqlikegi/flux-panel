@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/dialer"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	ssh_util "github.com/qqlikegi/forwardz/agent/x/internal/util/ssh"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 	"golang.org/x/crypto/ssh"
@@ -86,7 +86,7 @@ func (d *sshDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialOp
 
 		d.sessions[addr] = session
 	}
-	channel, reqs, err := session.OpenChannel(ssh_util.GostSSHTunnelRequest)
+	channel, reqs, err := session.OpenChannel(ssh_util.ForwardZSSHTunnelRequest)
 	if err != nil {
 		return nil, err
 	}

@@ -8,8 +8,8 @@ import (
 	"math"
 	"net"
 
-	"github.com/go-gost/core/common/bufpool"
-	"github.com/go-gost/relay"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/common/bufpool"
+	"github.com/qqlikegi/forwardz/agent/x/lib/relay"
 	xrelay "github.com/qqlikegi/forwardz/agent/x/internal/util/relay"
 )
 

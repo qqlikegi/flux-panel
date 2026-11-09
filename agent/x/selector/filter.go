@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
-	"github.com/go-gost/core/selector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/selector"
 )
 
 type failFilter[T any] struct {

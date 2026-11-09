@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"net/url"
 
-	"github.com/go-gost/core/auth"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/auth"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	xauth "github.com/qqlikegi/forwardz/agent/x/auth"
 	auth_plugin "github.com/qqlikegi/forwardz/agent/x/auth/plugin"
 	"github.com/qqlikegi/forwardz/agent/x/config"

@@ -3,7 +3,7 @@ package kcp
 import (
 	"encoding/json"
 
-	mdata "github.com/go-gost/core/metadata"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	kcp_util "github.com/qqlikegi/forwardz/agent/x/internal/util/kcp"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 )

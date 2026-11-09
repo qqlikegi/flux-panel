@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/recorder"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/recorder"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 	xrecorder "github.com/qqlikegi/forwardz/agent/x/recorder"

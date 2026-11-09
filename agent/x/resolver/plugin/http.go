@@ -9,8 +9,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/resolver"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/resolver"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 )

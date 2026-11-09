@@ -9,8 +9,8 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/core/common/bufpool"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/common/bufpool"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	xip "github.com/qqlikegi/forwardz/agent/x/internal/net/ip"
 	tun_util "github.com/qqlikegi/forwardz/agent/x/internal/util/tun"
 	"github.com/songgao/water/waterutil"

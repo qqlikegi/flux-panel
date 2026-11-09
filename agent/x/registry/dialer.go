@@ -1,8 +1,8 @@
 package registry
 
 import (
-	"github.com/go-gost/core/dialer"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 )
 
 type NewDialer func(opts ...dialer.Option) dialer.Dialer

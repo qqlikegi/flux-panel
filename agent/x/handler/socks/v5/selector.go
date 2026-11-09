@@ -5,9 +5,9 @@ import (
 	"crypto/tls"
 	"net"
 
-	"github.com/go-gost/core/auth"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/gosocks5"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/auth"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/gosocks5"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/socks"
 )

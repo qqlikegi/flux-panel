@@ -3,7 +3,7 @@ package tun
 import (
 	"net"
 
-	"github.com/go-gost/core/router"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/router"
 )
 
 type Config struct {

@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	limiter "github.com/go-gost/core/limiter/rate"
+	limiter "github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/rate"
 	"golang.org/x/time/rate"
 )
 

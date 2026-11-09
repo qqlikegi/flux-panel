@@ -9,7 +9,7 @@ import (
 	"net/http/httputil"
 	"time"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/internal/net/udp"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/socks"

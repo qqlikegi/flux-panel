@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-gost/core/dialer"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	ws_util "github.com/qqlikegi/forwardz/agent/x/internal/util/ws"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 	"github.com/gorilla/websocket"

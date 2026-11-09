@@ -5,8 +5,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/go-gost/core/limiter"
-	"github.com/go-gost/core/limiter/traffic"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/traffic"
 )
 
 // readWriter is an io.ReadWriter with traffic limiter supported.

@@ -18,14 +18,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/core/handler"
-	"github.com/go-gost/core/limiter"
-	"github.com/go-gost/core/limiter/traffic"
-	"github.com/go-gost/core/logger"
-	md "github.com/go-gost/core/metadata"
-	"github.com/go-gost/core/observer"
-	"github.com/go-gost/core/observer/stats"
-	"github.com/go-gost/core/recorder"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/handler"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/traffic"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer/stats"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/recorder"
 	xbypass "github.com/qqlikegi/forwardz/agent/x/bypass"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	xio "github.com/qqlikegi/forwardz/agent/x/internal/io"
@@ -161,7 +161,7 @@ func (h *http2Handler) Close() error {
 // May be fixed in go1.18.
 func (h *http2Handler) roundTrip(ctx context.Context, w http.ResponseWriter, req *http.Request, ro *xrecorder.HandlerRecorderObject, log logger.Logger) error {
 	// Try to get the actual host.
-	// Compatible with GOST 2.x.
+	// Compatible with legacy v2.x clients.
 	if v := req.Header.Get("ForwardZ-Target"); v != "" {
 		if h, err := h.decodeServerName(v); err == nil {
 			req.Host = h

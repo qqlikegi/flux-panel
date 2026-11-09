@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-gost/core/hosts"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/resolver"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/hosts"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/resolver"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 )
 

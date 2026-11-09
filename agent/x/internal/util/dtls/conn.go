@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"net"
 
-	"github.com/go-gost/core/common/bufpool"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/common/bufpool"
 )
 
 type dtlsConn struct {

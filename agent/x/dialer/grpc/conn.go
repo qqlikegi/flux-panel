@@ -10,7 +10,7 @@ import (
 )
 
 type conn struct {
-	c          pb.GostTunel_TunnelClient
+	c          pb.ForwardZTunnel_TunnelClient
 	rb         []byte
 	localAddr  net.Addr
 	remoteAddr net.Addr

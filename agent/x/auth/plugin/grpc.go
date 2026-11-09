@@ -4,9 +4,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/go-gost/core/auth"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/plugin/auth/proto"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/auth"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/plugin/auth/proto"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 	"google.golang.org/grpc"

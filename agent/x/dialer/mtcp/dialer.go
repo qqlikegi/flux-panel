@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/dialer"
-	"github.com/go-gost/core/logger"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/mux"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

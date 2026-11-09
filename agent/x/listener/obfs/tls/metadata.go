@@ -1,7 +1,7 @@
 package tls
 
 import (
-	md "github.com/go-gost/core/metadata"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 )
 

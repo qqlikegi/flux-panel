@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	mdata "github.com/go-gost/core/metadata"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/mux"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 )

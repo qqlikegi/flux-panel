@@ -3,10 +3,10 @@ package registry
 import (
 	"context"
 
-	"github.com/go-gost/core/limiter"
-	"github.com/go-gost/core/limiter/conn"
-	"github.com/go-gost/core/limiter/rate"
-	"github.com/go-gost/core/limiter/traffic"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/conn"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/rate"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/traffic"
 )
 
 type trafficLimiterRegistry struct {

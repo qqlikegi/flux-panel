@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
-	mdata "github.com/go-gost/core/metadata"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 	kcp_util "github.com/qqlikegi/forwardz/agent/x/internal/util/kcp"
 )

@@ -4,9 +4,9 @@ import (
 	"context"
 	"net"
 
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/connector"
-	"github.com/go-gost/core/dialer"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/connector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
 	net_dialer "github.com/qqlikegi/forwardz/agent/x/internal/net/dialer"
 )
 

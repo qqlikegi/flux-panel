@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/dialer"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	pht_util "github.com/qqlikegi/forwardz/agent/x/internal/util/pht"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

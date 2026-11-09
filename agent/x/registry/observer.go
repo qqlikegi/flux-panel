@@ -3,7 +3,7 @@ package registry
 import (
 	"context"
 
-	"github.com/go-gost/core/observer"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer"
 )
 
 type observerRegistry struct {

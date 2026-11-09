@@ -5,9 +5,9 @@ import (
 	"io"
 	"net"
 
-	"github.com/go-gost/core/hosts"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/plugin/hosts/proto"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/hosts"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/plugin/hosts/proto"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 	"google.golang.org/grpc"

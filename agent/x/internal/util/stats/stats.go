@@ -3,8 +3,8 @@ package stats
 import (
 	"sync"
 
-	"github.com/go-gost/core/observer"
-	"github.com/go-gost/core/observer/stats"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer/stats"
 	xstats "github.com/qqlikegi/forwardz/agent/x/observer/stats"
 )
 

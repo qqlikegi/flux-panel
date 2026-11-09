@@ -3,10 +3,10 @@ package udp
 import (
 	"net"
 
-	"github.com/go-gost/core/limiter"
-	"github.com/go-gost/core/listener"
-	"github.com/go-gost/core/logger"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/listener"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	admission "github.com/qqlikegi/forwardz/agent/x/admission/wrapper"
 	limiter_wrapper "github.com/qqlikegi/forwardz/agent/x/limiter/traffic/wrapper"
 	metrics "github.com/qqlikegi/forwardz/agent/x/metrics/wrapper"

@@ -10,8 +10,8 @@ import (
 	"sync"
 	"time"
 
-	limiter "github.com/go-gost/core/limiter/rate"
-	"github.com/go-gost/core/logger"
+	limiter "github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/rate"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/internal/loader"
 	"github.com/yl2chen/cidranger"
 )

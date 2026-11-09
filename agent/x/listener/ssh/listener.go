@@ -6,10 +6,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/core/limiter"
-	"github.com/go-gost/core/listener"
-	"github.com/go-gost/core/logger"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/listener"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	admission "github.com/qqlikegi/forwardz/agent/x/admission/wrapper"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	"github.com/qqlikegi/forwardz/agent/x/internal/net/proxyproto"
@@ -150,7 +150,7 @@ func (l *sshListener) serveConn(conn net.Conn) {
 			// Check the type of channel
 			t := newChannel.ChannelType()
 			switch t {
-			case ssh_util.GostSSHTunnelRequest:
+			case ssh_util.ForwardZSSHTunnelRequest:
 				channel, requests, err := newChannel.Accept()
 				if err != nil {
 					l.logger.Warnf("could not accept channel: %s", err.Error())

@@ -3,7 +3,7 @@ package registry
 import (
 	"context"
 
-	"github.com/go-gost/core/router"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/router"
 )
 
 type routerRegistry struct {

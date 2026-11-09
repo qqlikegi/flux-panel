@@ -9,7 +9,7 @@
 #  执行“更新到最新版”时会自动迁移为 ForwardZ 命名。
 # =====================================================================
 
-REPO="qqlikegi/flux-panel"
+REPO="qqlikegi/forwardz"
 RELEASE_URL="https://github.com/${REPO}/releases/latest/download"
 SYSTEMD_DIR="${FORWARDZ_SYSTEMD_DIR:-/etc/systemd/system}"
 AGENT_ROOT="${FORWARDZ_AGENT_ROOT:-/etc}"   # 节点端实例目录的上级目录（仅测试时覆盖）

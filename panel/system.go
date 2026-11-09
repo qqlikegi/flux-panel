@@ -272,7 +272,7 @@ func fingerprintSave(c *Ctx) any {
 // ---------- 品牌：ForwardZ ----------
 
 // releaseRepo 发布 Release（安装脚本、程序文件）的 GitHub 仓库。仓库改名后改这里即可（GitHub 会自动跳转旧地址）
-const releaseRepo = "qqlikegi/flux-panel"
+const releaseRepo = "qqlikegi/forwardz"
 
 // migrateBranding 旧版本默认的应用名 flux 改为 ForwardZ；用户自己改过的名字不动
 func migrateBranding() {

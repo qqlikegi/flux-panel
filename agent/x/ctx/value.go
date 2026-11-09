@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 )
 
 // clientAddrKey saves the client address.

@@ -8,9 +8,9 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/go-gost/core/limiter"
-	"github.com/go-gost/core/limiter/traffic"
-	"github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/traffic"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	"github.com/qqlikegi/forwardz/agent/x/internal/net/udp"
 )

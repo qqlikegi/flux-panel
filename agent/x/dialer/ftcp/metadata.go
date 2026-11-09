@@ -1,7 +1,7 @@
 package ftcp
 
 import (
-	md "github.com/go-gost/core/metadata"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 )
 
 type metadata struct{}

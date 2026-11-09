@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	xlogger "github.com/qqlikegi/forwardz/agent/x/logger"
 	"github.com/qqlikegi/forwardz/agent/x/registry"

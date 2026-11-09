@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/gosocks5"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/gosocks5"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/mux"
 )
 

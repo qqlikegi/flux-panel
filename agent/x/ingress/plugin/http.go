@@ -6,8 +6,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-gost/core/ingress"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/ingress"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 )
 

@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/admission"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/admission"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/internal/loader"
 	"github.com/qqlikegi/forwardz/agent/x/internal/matcher"
 )

@@ -3,7 +3,7 @@ package wg
 import (
 	"time"
 
-	md "github.com/go-gost/core/metadata"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 )
 
 const (

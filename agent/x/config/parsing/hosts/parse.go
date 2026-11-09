@@ -5,8 +5,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-gost/core/hosts"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/hosts"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	xhosts "github.com/qqlikegi/forwardz/agent/x/hosts"
 	hosts_plugin "github.com/qqlikegi/forwardz/agent/x/hosts/plugin"

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-gost/core/recorder"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/recorder"
 )
 
 const (

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/core/observer/stats"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer/stats"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/crypto"
 	"github.com/qqlikegi/forwardz/agent/x/registry"

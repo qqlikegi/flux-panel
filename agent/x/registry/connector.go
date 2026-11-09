@@ -1,8 +1,8 @@
 package registry
 
 import (
-	"github.com/go-gost/core/connector"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/connector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 )
 
 type NewConnector func(opts ...connector.Option) connector.Connector

@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/handler"
-	md "github.com/go-gost/core/metadata"
-	"github.com/go-gost/core/recorder"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/handler"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/recorder"
 	xrecorder "github.com/qqlikegi/forwardz/agent/x/recorder"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

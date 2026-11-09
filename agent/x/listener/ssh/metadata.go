@@ -3,7 +3,7 @@ package ssh
 import (
 	"os"
 
-	mdata "github.com/go-gost/core/metadata"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	ssh_util "github.com/qqlikegi/forwardz/agent/x/internal/util/ssh"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 	"github.com/mitchellh/go-homedir"

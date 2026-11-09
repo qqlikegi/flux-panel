@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/resolver"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/resolver"
 	xchain "github.com/qqlikegi/forwardz/agent/x/chain"
 	resolver_util "github.com/qqlikegi/forwardz/agent/x/internal/util/resolver"
 	"github.com/qqlikegi/forwardz/agent/x/resolver/exchanger"

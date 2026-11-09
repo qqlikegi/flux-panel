@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/go-gost/core/bypass"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/bypass"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	xbypass "github.com/qqlikegi/forwardz/agent/x/bypass"
 	bypass_plugin "github.com/qqlikegi/forwardz/agent/x/bypass/plugin"
 	"github.com/qqlikegi/forwardz/agent/x/config"

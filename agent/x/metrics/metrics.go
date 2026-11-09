@@ -3,7 +3,7 @@ package metrics
 import (
 	"sync/atomic"
 
-	"github.com/go-gost/core/metrics"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metrics"
 )
 
 const (

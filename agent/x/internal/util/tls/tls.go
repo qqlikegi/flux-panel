@@ -18,7 +18,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	"github.com/patrickmn/go-cache"
 )

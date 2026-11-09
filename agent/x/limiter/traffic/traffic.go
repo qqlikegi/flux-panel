@@ -10,9 +10,9 @@ import (
 	"time"
 
 	"github.com/alecthomas/units"
-	"github.com/go-gost/core/limiter"
-	"github.com/go-gost/core/limiter/traffic"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/traffic"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/internal/loader"
 	"github.com/patrickmn/go-cache"
 	"github.com/yl2chen/cidranger"

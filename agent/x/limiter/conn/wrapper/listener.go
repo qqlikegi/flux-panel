@@ -3,7 +3,7 @@ package wrapper
 import (
 	"net"
 
-	limiter "github.com/go-gost/core/limiter/conn"
+	limiter "github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/conn"
 )
 
 type listener struct {

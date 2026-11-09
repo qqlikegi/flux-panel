@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	parser "github.com/qqlikegi/forwardz/agent/x/config/parsing/chain"
 	"github.com/qqlikegi/forwardz/agent/x/registry"

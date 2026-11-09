@@ -3,7 +3,7 @@ package metadata
 import (
 	"strings"
 
-	"github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 )
 
 type mapMetadata map[string]any

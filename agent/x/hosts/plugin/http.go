@@ -7,8 +7,8 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/go-gost/core/hosts"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/hosts"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 )

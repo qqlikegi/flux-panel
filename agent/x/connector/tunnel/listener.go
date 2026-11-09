@@ -5,9 +5,9 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/go-gost/core/logger"
-	mdata "github.com/go-gost/core/metadata"
-	"github.com/go-gost/relay"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/relay"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/mux"
 	mdx "github.com/qqlikegi/forwardz/agent/x/metadata"
 )

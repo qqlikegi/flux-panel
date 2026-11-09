@@ -4,7 +4,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/observer/stats"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer/stats"
 )
 
 const (

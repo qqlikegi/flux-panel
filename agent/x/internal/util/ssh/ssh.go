@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/go-gost/core/auth"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/auth"
 	"golang.org/x/crypto/ssh"
 )
 
 const (
-	GostSSHTunnelRequest = "forwardz-tunnel" // extended request type for ssh tunnel
+	ForwardZSSHTunnelRequest = "forwardz-tunnel" // extended request type for ssh tunnel
 )
 
 var (

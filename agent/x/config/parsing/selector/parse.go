@@ -1,8 +1,8 @@
 package selector
 
 import (
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/selector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/selector"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	xs "github.com/qqlikegi/forwardz/agent/x/selector"
 )

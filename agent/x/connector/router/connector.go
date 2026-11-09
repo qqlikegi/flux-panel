@@ -6,9 +6,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/core/connector"
-	md "github.com/go-gost/core/metadata"
-	"github.com/go-gost/relay"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/connector"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/relay"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

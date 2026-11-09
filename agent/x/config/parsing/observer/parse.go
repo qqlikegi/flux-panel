@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/go-gost/core/observer"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 	observer_plugin "github.com/qqlikegi/forwardz/agent/x/observer/plugin"

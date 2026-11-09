@@ -18,7 +18,7 @@
 #  非交互指定端口：PANEL_PORT=6365 ./panel_install.sh install
 # =====================================================================
 
-REPO="qqlikegi/flux-panel"
+REPO="qqlikegi/forwardz"
 INSTALL_DIR="/opt/forwardz-panel"
 SERVICE_NAME="forwardz-panel"
 BIN_NAME="forwardz-panel"

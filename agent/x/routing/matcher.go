@@ -8,7 +8,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/go-gost/core/routing"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/routing"
 	"github.com/qqlikegi/forwardz/agent/x/routing/rules"
 	"golang.org/x/exp/slices"
 )

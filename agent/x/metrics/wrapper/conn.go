@@ -6,8 +6,8 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/go-gost/core/metadata"
-	"github.com/go-gost/core/metrics"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metrics"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	"github.com/qqlikegi/forwardz/agent/x/internal/net/udp"
 	xmetrics "github.com/qqlikegi/forwardz/agent/x/metrics"

@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	xlogger "github.com/qqlikegi/forwardz/agent/x/logger"
 	"github.com/qqlikegi/forwardz/agent/x/service"
 	"github.com/qqlikegi/forwardz/agent/x/socket"
@@ -152,5 +152,5 @@ func main() {
 	}
 }
 
-// GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o gost
-// upx --best --lzma gost
+// GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o forwardz_agent
+// upx --best --lzma forwardz_agent

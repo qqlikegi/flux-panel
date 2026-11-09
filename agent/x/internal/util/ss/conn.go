@@ -5,7 +5,7 @@ import (
 	"math"
 	"net"
 
-	"github.com/go-gost/gosocks5"
+	"github.com/qqlikegi/forwardz/agent/x/lib/gosocks5"
 )
 
 const (

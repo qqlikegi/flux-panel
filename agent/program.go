@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 	"errors"
-	"github.com/go-gost/core/auth"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/service"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/auth"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/service"
 	api_service "github.com/qqlikegi/forwardz/agent/x/api/service"
 	xauth "github.com/qqlikegi/forwardz/agent/x/auth"
 	"github.com/qqlikegi/forwardz/agent/x/config"

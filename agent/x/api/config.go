@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-gost/core/observer/stats"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer/stats"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 	"github.com/qqlikegi/forwardz/agent/x/service"

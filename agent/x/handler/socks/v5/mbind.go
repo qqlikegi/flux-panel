@@ -6,10 +6,10 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/core/limiter"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/observer/stats"
-	"github.com/go-gost/gosocks5"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer/stats"
+	"github.com/qqlikegi/forwardz/agent/x/lib/gosocks5"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/mux"
@@ -143,7 +143,7 @@ func (h *socks5Handler) serveMuxBind(ctx context.Context, conn net.Conn, ln net.
 			}
 			defer sc.Close()
 
-			// incompatible with GOST v2.x
+			// incompatible with legacy v2.x clients
 			if !h.md.compatibilityMode {
 				addr := gosocks5.Addr{}
 				addr.ParseFrom(c.RemoteAddr().String())

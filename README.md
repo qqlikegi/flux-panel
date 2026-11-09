@@ -22,11 +22,11 @@ ForwardZ 基于 flux-panel 2.0.7 开发版二次开发，**不再使用 Docker�
 
 - **面板**：Go 编写的单个二进制文件，前端页面已内置，数据库为内置 SQLite，网页 / 接口 / 节点通信共用一个端口，由 systemd 管理。
 - **节点端**：ForwardZ Agent 单个二进制文件（基于 GOST 3.1.0 修改），由 systemd 管理，`forwardz_agent -V` 查看版本。
-- 支持 Linux **amd64 / arm64**，二进制从本仓库 [Releases](https://github.com/qqlikegi/flux-panel/releases) 下载。
+- 支持 Linux **amd64 / arm64**，二进制从本仓库 [Releases](https://github.com/qqlikegi/forwardz/releases) 下载。
 
 ### 安装面板
 ```bash
-curl -L https://raw.githubusercontent.com/qqlikegi/flux-panel/main/panel_install.sh -o panel_install.sh && chmod +x panel_install.sh && ./panel_install.sh
+curl -L https://raw.githubusercontent.com/qqlikegi/forwardz/main/panel_install.sh -o panel_install.sh && chmod +x panel_install.sh && ./panel_install.sh
 ```
 脚本菜单提供：安装 / 更新（失败自动回滚）/ 卸载 / 查看状态 / 重置管理员密码。也可以直接带参数运行：
 ```bash
@@ -136,4 +136,4 @@ cd ../agent && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags
 
 - ForwardZ 面板部分沿用 flux-panel 的 [Apache License 2.0](./LICENSE)，感谢原作者 [bqlpfy/flux-panel](https://github.com/bqlpfy/flux-panel)；
 - ForwardZ Agent 基于 GOST v3.1.0 修改，原版权声明见 [agent/LICENSE-gost](./agent/LICENSE-gost)（MIT License, Copyright (c) 2016 ginuerzh），感谢 [go-gost](https://github.com/go-gost) 项目；
-- 节点端仍依赖未经修改的上游模块 `github.com/go-gost/core`、`relay`、`gosocks`、`plugin`、`tls-dissector`（MIT License）。
+- 上游模块 go-gost/core、relay、gosocks4、gosocks5、plugin、tls-dissector（MIT License）已内置到 `agent/x/lib/` 并改为 ForwardZ 自己的包路径，各自的原版权声明保留在对应目录的 `LICENSE-go-gost-*` 文件中。

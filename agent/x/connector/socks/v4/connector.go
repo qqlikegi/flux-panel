@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-gost/core/connector"
-	md "github.com/go-gost/core/metadata"
-	"github.com/go-gost/gosocks4"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/connector"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/gosocks4"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

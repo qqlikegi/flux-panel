@@ -1,8 +1,8 @@
 package rate
 
 import (
-	"github.com/go-gost/core/limiter/rate"
-	limiter "github.com/go-gost/core/limiter/rate"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/rate"
+	limiter "github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/rate"
 )
 
 type RateLimitGenerator interface {

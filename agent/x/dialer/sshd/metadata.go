@@ -5,7 +5,7 @@ import (
 	"os"
 	"time"
 
-	mdata "github.com/go-gost/core/metadata"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 	"github.com/mitchellh/go-homedir"
 	"github.com/zalando/go-keyring"

@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-gost/core/auth"
-	"github.com/go-gost/core/service"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/auth"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/service"
 	"github.com/qqlikegi/forwardz/agent/x/api"
 )
 

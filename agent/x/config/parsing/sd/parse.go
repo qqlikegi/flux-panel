@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/go-gost/core/sd"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/sd"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 	sd_plugin "github.com/qqlikegi/forwardz/agent/x/sd/plugin"

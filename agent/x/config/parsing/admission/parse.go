@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/go-gost/core/admission"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/admission"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	xadmission "github.com/qqlikegi/forwardz/agent/x/admission"
 	admission_plugin "github.com/qqlikegi/forwardz/agent/x/admission/plugin"
 	"github.com/qqlikegi/forwardz/agent/x/config"

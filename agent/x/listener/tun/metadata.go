@@ -4,9 +4,9 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-gost/core/logger"
-	mdata "github.com/go-gost/core/metadata"
-	"github.com/go-gost/core/router"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/router"
 	tun_util "github.com/qqlikegi/forwardz/agent/x/internal/util/tun"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 	"github.com/qqlikegi/forwardz/agent/x/registry"

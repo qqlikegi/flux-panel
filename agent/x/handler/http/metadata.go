@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/core/bypass"
-	mdata "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/bypass"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

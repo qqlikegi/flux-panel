@@ -6,9 +6,9 @@ import (
 	"errors"
 	"io"
 
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/recorder"
-	"github.com/go-gost/plugin/recorder/proto"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/recorder"
+	"github.com/qqlikegi/forwardz/agent/x/lib/plugin/recorder/proto"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 	"google.golang.org/grpc"
 )

@@ -16,8 +16,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/common/bufpool"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/common/bufpool"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	"github.com/quic-go/quic-go"
 	"github.com/quic-go/quic-go/http3"

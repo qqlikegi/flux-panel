@@ -7,9 +7,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/recorder"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/recorder"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 )

@@ -10,9 +10,9 @@ import (
 	"net"
 	"sync"
 
-	"github.com/go-gost/core/common/bufpool"
-	mdata "github.com/go-gost/core/metadata"
-	"github.com/go-gost/relay"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/common/bufpool"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/relay"
 	xrelay "github.com/qqlikegi/forwardz/agent/x/internal/util/relay"
 )
 

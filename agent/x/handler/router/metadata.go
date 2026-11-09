@@ -4,10 +4,10 @@ import (
 	"math"
 	"time"
 
-	"github.com/go-gost/core/ingress"
-	mdata "github.com/go-gost/core/metadata"
-	"github.com/go-gost/core/router"
-	"github.com/go-gost/core/sd"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/ingress"
+	mdata "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/router"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/sd"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

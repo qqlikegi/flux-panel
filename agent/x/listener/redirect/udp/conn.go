@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/common/bufpool"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/common/bufpool"
 )
 
 type redirConn struct {

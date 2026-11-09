@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/hop"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/hop"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	xbypass "github.com/qqlikegi/forwardz/agent/x/bypass"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	"github.com/qqlikegi/forwardz/agent/x/config/parsing"

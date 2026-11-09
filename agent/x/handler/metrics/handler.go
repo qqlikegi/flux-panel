@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-gost/core/handler"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/handler"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	xmetrics "github.com/qqlikegi/forwardz/agent/x/metrics"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 	"github.com/prometheus/client_golang/prometheus/promhttp"

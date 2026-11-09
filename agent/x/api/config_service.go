@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-gost/core/service"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/service"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	parser "github.com/qqlikegi/forwardz/agent/x/config/parsing/service"
 	kill "github.com/qqlikegi/forwardz/agent/x/internal/util/port"

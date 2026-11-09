@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/go-gost/core/auth"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/auth"
 )
 
 var (

@@ -5,9 +5,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/core/common/bufpool"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/gosocks5"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/common/bufpool"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/gosocks5"
 )
 
 type bindConn struct {

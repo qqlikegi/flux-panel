@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/core/bypass"
-	"github.com/go-gost/core/logger"
-	dissector "github.com/go-gost/tls-dissector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/bypass"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	dissector "github.com/qqlikegi/forwardz/agent/x/lib/tls-dissector"
 	xbypass "github.com/qqlikegi/forwardz/agent/x/bypass"
 	xio "github.com/qqlikegi/forwardz/agent/x/internal/io"
 	netpkg "github.com/qqlikegi/forwardz/agent/x/internal/net"

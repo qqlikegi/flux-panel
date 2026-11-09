@@ -7,7 +7,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	wt_util "github.com/qqlikegi/forwardz/agent/x/internal/util/wt"
 	wt "github.com/quic-go/webtransport-go"
 )

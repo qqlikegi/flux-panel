@@ -10,7 +10,7 @@ import (
 	"net"
 	"strings"
 
-	dissector "github.com/go-gost/tls-dissector"
+	dissector "github.com/qqlikegi/forwardz/agent/x/lib/tls-dissector"
 )
 
 type sniClientConn struct {

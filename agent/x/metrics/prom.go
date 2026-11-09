@@ -3,7 +3,7 @@ package metrics
 import (
 	"os"
 
-	"github.com/go-gost/core/metrics"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metrics"
 	"github.com/prometheus/client_golang/prometheus"
 )
 

@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/miekg/dns"
 )

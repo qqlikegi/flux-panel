@@ -1,7 +1,7 @@
 package mtcp
 
 import (
-	md "github.com/go-gost/core/metadata"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/mux"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
 )

@@ -5,8 +5,8 @@ import (
 	"net"
 	"strings"
 
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/resolver"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/resolver"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 	"github.com/qqlikegi/forwardz/agent/x/registry"

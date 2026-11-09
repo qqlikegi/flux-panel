@@ -6,7 +6,7 @@ import (
 	"net"
 	"time"
 
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	pb "github.com/qqlikegi/forwardz/agent/x/internal/util/grpc/proto"
 	"google.golang.org/grpc/peer"
 )
@@ -14,11 +14,11 @@ import (
 type server struct {
 	cqueue    chan net.Conn
 	localAddr net.Addr
-	pb.UnimplementedGostTunelServer
+	pb.UnimplementedForwardZTunnelServer
 	logger logger.Logger
 }
 
-func (s *server) Tunnel(srv pb.GostTunel_TunnelServer) error {
+func (s *server) Tunnel(srv pb.ForwardZTunnel_TunnelServer) error {
 	c := &conn{
 		s:          srv,
 		localAddr:  s.localAddr,
@@ -42,7 +42,7 @@ func (s *server) Tunnel(srv pb.GostTunel_TunnelServer) error {
 }
 
 type conn struct {
-	s          pb.GostTunel_TunnelServer
+	s          pb.ForwardZTunnel_TunnelServer
 	rb         []byte
 	localAddr  net.Addr
 	remoteAddr net.Addr

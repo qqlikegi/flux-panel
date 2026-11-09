@@ -5,8 +5,8 @@ import (
 	"errors"
 	"net"
 
-	"github.com/go-gost/core/connector"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/connector"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	ssh_util "github.com/qqlikegi/forwardz/agent/x/internal/util/ssh"
 	"github.com/qqlikegi/forwardz/agent/x/registry"

@@ -6,8 +6,8 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/go-gost/core/connector"
-	"github.com/go-gost/relay"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/connector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/relay"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/mux"
 )
 

@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"github.com/go-gost/core/common/bufpool"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/common/bufpool"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	"github.com/vishvananda/netns"
 	"golang.org/x/sys/unix"

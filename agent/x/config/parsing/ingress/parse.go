@@ -4,8 +4,8 @@ import (
 	"crypto/tls"
 	"strings"
 
-	"github.com/go-gost/core/ingress"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/ingress"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	xingress "github.com/qqlikegi/forwardz/agent/x/ingress"
 	ingress_plugin "github.com/qqlikegi/forwardz/agent/x/ingress/plugin"

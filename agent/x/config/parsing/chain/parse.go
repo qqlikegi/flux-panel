@@ -1,10 +1,10 @@
 package chain
 
 import (
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/hop"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/hop"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	xchain "github.com/qqlikegi/forwardz/agent/x/chain"
 	"github.com/qqlikegi/forwardz/agent/x/config"
 	hop_parser "github.com/qqlikegi/forwardz/agent/x/config/parsing/hop"

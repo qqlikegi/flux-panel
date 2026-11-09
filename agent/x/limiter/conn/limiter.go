@@ -4,7 +4,7 @@ import (
 	"sort"
 	"sync/atomic"
 
-	limiter "github.com/go-gost/core/limiter/conn"
+	limiter "github.com/qqlikegi/forwardz/agent/x/lib/core/limiter/conn"
 )
 
 type llimiter struct {

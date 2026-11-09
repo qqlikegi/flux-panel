@@ -6,11 +6,11 @@ import (
 	"encoding/hex"
 	"net"
 
-	"github.com/go-gost/core/ingress"
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/observer/stats"
-	"github.com/go-gost/core/sd"
-	"github.com/go-gost/relay"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/ingress"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer/stats"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/sd"
+	"github.com/qqlikegi/forwardz/agent/x/lib/relay"
 	"github.com/qqlikegi/forwardz/agent/x/internal/util/mux"
 	"github.com/google/uuid"
 )

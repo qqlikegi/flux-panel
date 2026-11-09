@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
 	xchain "github.com/qqlikegi/forwardz/agent/x/chain"
 	"github.com/miekg/dns"
 )

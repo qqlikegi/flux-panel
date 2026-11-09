@@ -12,9 +12,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-gost/core/connector"
-	"github.com/go-gost/core/logger"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/connector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

@@ -4,9 +4,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/router"
-	"github.com/go-gost/plugin/router/proto"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/router"
+	"github.com/qqlikegi/forwardz/agent/x/lib/plugin/router/proto"
 	"github.com/qqlikegi/forwardz/agent/x/internal/plugin"
 	xrouter "github.com/qqlikegi/forwardz/agent/x/router"
 	"google.golang.org/grpc"

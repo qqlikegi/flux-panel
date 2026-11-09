@@ -7,8 +7,8 @@ import (
 	"net"
 	"syscall"
 
-	"github.com/go-gost/core/admission"
-	"github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/admission"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	"github.com/qqlikegi/forwardz/agent/x/internal/net/udp"
 )

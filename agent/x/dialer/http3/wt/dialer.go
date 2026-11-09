@@ -6,8 +6,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/go-gost/core/dialer"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 	"github.com/quic-go/quic-go"
 	wt "github.com/quic-go/webtransport-go"

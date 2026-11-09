@@ -23,7 +23,7 @@
 #  离线安装：AGENT_BINARY=/path/to/forwardz-agent-amd64 ./install.sh -a ... -s ...
 # =====================================================================
 
-REPO="qqlikegi/flux-panel"          # 发布 Release 的 GitHub 仓库
+REPO="qqlikegi/forwardz"          # 发布 Release 的 GitHub 仓库
 SVC_PREFIX="forwardz_agent"         # 实例名 / 服务名前缀，也是程序文件名
 LEGACY_PREFIX="flux_agent"          # 改名前的实例前缀（自动迁移）
 CONF_NAME="forwardz.json"           # 面板下发的转发配置

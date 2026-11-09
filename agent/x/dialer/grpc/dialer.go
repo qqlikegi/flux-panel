@@ -5,8 +5,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/go-gost/core/dialer"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	pb "github.com/qqlikegi/forwardz/agent/x/internal/util/grpc/proto"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 	"google.golang.org/grpc"
@@ -21,7 +21,7 @@ func init() {
 }
 
 type grpcDialer struct {
-	clients     map[string]pb.GostTunelClientX
+	clients     map[string]pb.ForwardZTunnelClientX
 	clientMutex sync.Mutex
 	md          metadata
 	options     dialer.Options
@@ -34,7 +34,7 @@ func NewDialer(opts ...dialer.Option) dialer.Dialer {
 	}
 
 	return &grpcDialer{
-		clients: make(map[string]pb.GostTunelClientX),
+		clients: make(map[string]pb.ForwardZTunnelClientX),
 		options: options,
 	}
 }
@@ -98,7 +98,7 @@ func (d *grpcDialer) Dial(ctx context.Context, addr string, opts ...dialer.DialO
 			d.options.Logger.Error(err)
 			return nil, err
 		}
-		client = pb.NewGostTunelClientX(cc)
+		client = pb.NewForwardZTunnelClientX(cc)
 		d.clients[addr] = client
 	}
 

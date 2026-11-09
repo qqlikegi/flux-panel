@@ -7,8 +7,8 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/go-gost/core/metadata"
-	"github.com/go-gost/core/observer/stats"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/observer/stats"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	"github.com/qqlikegi/forwardz/agent/x/internal/net/udp"
 )

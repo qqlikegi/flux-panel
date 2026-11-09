@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-gost/core/handler"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/handler"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	"github.com/qqlikegi/forwardz/agent/x/api"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 )

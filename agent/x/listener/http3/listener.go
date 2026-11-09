@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/go-gost/core/listener"
-	"github.com/go-gost/core/logger"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/listener"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	xnet "github.com/qqlikegi/forwardz/agent/x/internal/net"
 	mdx "github.com/qqlikegi/forwardz/agent/x/metadata"
 	"github.com/qqlikegi/forwardz/agent/x/registry"

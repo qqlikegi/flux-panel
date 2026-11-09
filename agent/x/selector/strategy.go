@@ -8,10 +8,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-gost/core/logger"
-	"github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	mdutil "github.com/qqlikegi/forwardz/agent/x/metadata/util"
-	"github.com/go-gost/core/selector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/selector"
 	ctxvalue "github.com/qqlikegi/forwardz/agent/x/ctx"
 )
 

@@ -3,9 +3,9 @@ package registry
 import (
 	"context"
 
-	"github.com/go-gost/core/chain"
-	"github.com/go-gost/core/metadata"
-	"github.com/go-gost/core/selector"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/chain"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/selector"
 )
 
 type chainRegistry struct {

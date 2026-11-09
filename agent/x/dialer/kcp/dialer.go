@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-gost/core/dialer"
-	"github.com/go-gost/core/logger"
-	md "github.com/go-gost/core/metadata"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/dialer"
+	"github.com/qqlikegi/forwardz/agent/x/lib/core/logger"
+	md "github.com/qqlikegi/forwardz/agent/x/lib/core/metadata"
 	kcp_util "github.com/qqlikegi/forwardz/agent/x/internal/util/kcp"
 	"github.com/qqlikegi/forwardz/agent/x/registry"
 	"github.com/xtaci/kcp-go/v5"
