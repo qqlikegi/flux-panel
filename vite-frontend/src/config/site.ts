@@ -10,14 +10,14 @@ const APP_VERSION = "1.0.3";
 const getInitialConfig = () => {
   if (typeof window === 'undefined') {
     return {
-      name: "flux",
+      name: "ForwardZ",
       version: VERSION,
       app_version: APP_VERSION,
     };
   }
 
   const cachedAppName = localStorage.getItem(CACHE_PREFIX + 'app_name');
-    if (cachedAppName) {
+    if (cachedAppName && cachedAppName !== "flux") {
       return {
         name: cachedAppName,
         version: VERSION,
@@ -25,7 +25,7 @@ const getInitialConfig = () => {
       };
     }
   return {
-    name: "flux",
+    name: "ForwardZ",
     version: VERSION,
     app_version: APP_VERSION,
   };

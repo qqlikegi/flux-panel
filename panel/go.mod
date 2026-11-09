@@ -1,4 +1,4 @@
-module github.com/qqlikegi/flux-panel/panel
+module github.com/qqlikegi/forwardz/panel
 
 go 1.23.4
 

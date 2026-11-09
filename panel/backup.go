@@ -278,7 +278,10 @@ type backupConfig struct {
 	Hours     int    `json:"hours"`
 }
 
-const backupFilePrefix = "flux-panel-backup-"
+const backupFilePrefix = "forwardz-panel-backup-"
+
+// legacyBackupFilePrefix 改名前（flux-panel）的备份文件前缀，仍参与列表展示和滚动清理
+const legacyBackupFilePrefix = "flux-panel-backup-"
 
 func loadBackupConfig() backupConfig {
 	c := backupConfig{
@@ -315,11 +318,35 @@ func (c *backupConfig) normalize() {
 	}
 }
 
-func (c backupConfig) keyPrefix() string {
+func (c backupConfig) keyPrefix() string { return c.dir() + backupFilePrefix }
+
+func (c backupConfig) dir() string {
 	if c.Prefix == "" {
-		return backupFilePrefix
+		return ""
 	}
-	return c.Prefix + "/" + backupFilePrefix
+	return c.Prefix + "/"
+}
+
+// backupTime 备份文件名里的时间部分（去掉目录和前缀），用来按时间排序
+func backupTime(key string) string {
+	key = key[strings.LastIndex(key, "/")+1:]
+	key = strings.TrimPrefix(key, backupFilePrefix)
+	return strings.TrimPrefix(key, legacyBackupFilePrefix)
+}
+
+// listBackups 列出新旧两种前缀的全部备份，按时间从旧到新排序
+func (c backupConfig) listBackups(cl *s3Client) ([]s3Object, error) {
+	objs, err := cl.list(c.keyPrefix())
+	if err != nil {
+		return nil, err
+	}
+	old, err := cl.list(c.dir() + legacyBackupFilePrefix)
+	if err != nil {
+		return nil, err
+	}
+	objs = append(objs, old...)
+	sort.Slice(objs, func(i, j int) bool { return backupTime(objs[i].Key) < backupTime(objs[j].Key) })
+	return objs, nil
 }
 
 func (c backupConfig) client() (*s3Client, error) {
@@ -408,7 +435,7 @@ func backupTest(c *Ctx) any {
 	if err != nil {
 		return fail(err.Error())
 	}
-	objs, err := cl.list(d.keyPrefix())
+	objs, err := d.listBackups(cl)
 	if err != nil {
 		return fail(err.Error())
 	}
@@ -434,11 +461,13 @@ func backupList(c *Ctx) any {
 	if err != nil {
 		return fail(err.Error())
 	}
-	objs, err := cl.list(cfg.keyPrefix())
+	objs, err := cfg.listBackups(cl)
 	if err != nil {
 		return fail(err.Error())
 	}
-	sort.Slice(objs, func(i, j int) bool { return objs[i].Key > objs[j].Key })
+	for i, j := 0, len(objs)-1; i < j; i, j = i+1, j-1 { // 新的在前
+		objs[i], objs[j] = objs[j], objs[i]
+	}
 	return ok(objs)
 }
 
@@ -511,11 +540,10 @@ func runBackup(cfg backupConfig) (key string, err error) {
 		return "", fmt.Errorf("上传备份失败: %v", err)
 	}
 	// 读取列表，删掉最旧的，循环滚动
-	objs, err := cl.list(cfg.keyPrefix())
+	objs, err := cfg.listBackups(cl) // 已按时间从旧到新排序
 	if err != nil {
 		return key, fmt.Errorf("备份已上传，但读取备份列表失败（未清理旧备份）: %v", err)
 	}
-	sort.Slice(objs, func(i, j int) bool { return objs[i].Key < objs[j].Key }) // 文件名带时间，按名称即按时间
 	var delErrs []string
 	for i := 0; i < len(objs)-cfg.Keep; i++ {
 		if objs[i].Key == key {

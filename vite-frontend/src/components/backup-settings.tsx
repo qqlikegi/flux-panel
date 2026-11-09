@@ -159,7 +159,7 @@ export default function BackupSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="存储桶名称"
-            placeholder="例如 flux-backup"
+            placeholder="例如 forwardz-backup"
             description="不存在时会自动创建"
             value={form.bucket}
             onValueChange={v => set("bucket", v)}
@@ -167,7 +167,7 @@ export default function BackupSettings() {
           />
           <Input
             label="备份目录（可选）"
-            placeholder="例如 flux-panel"
+            placeholder="例如 forwardz-panel"
             description="存储桶里存放备份的文件夹，留空放在根目录"
             value={form.prefix}
             onValueChange={v => set("prefix", v)}

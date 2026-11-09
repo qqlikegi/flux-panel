@@ -36,19 +36,19 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: go-gost/go.mod
-          cache-dependency-path: go-gost/go.sum
+          go-version-file: agent/go.mod
+          cache-dependency-path: agent/go.sum
       - name: Build
-        working-directory: go-gost
+        working-directory: agent
         env:
           CGO_ENABLED: '0'
           GOOS: linux
           GOARCH: ${{ matrix.arch }}
-        run: go build -trimpath -ldflags "-s -w -X main.agentVersion=${{ needs.version.outputs.version }}" -o gost-${{ matrix.arch }} .
+        run: go build -trimpath -ldflags "-s -w -X main.agentVersion=${{ needs.version.outputs.version }}" -o forwardz-agent-${{ matrix.arch }} .
       - uses: actions/upload-artifact@v4
         with:
-          name: gost-${{ matrix.arch }}
-          path: go-gost/gost-${{ matrix.arch }}
+          name: forwardz-agent-${{ matrix.arch }}
+          path: agent/forwardz-agent-${{ matrix.arch }}
 
   panel:
     name: Panel (Go 单文件，内置前端)
@@ -79,15 +79,15 @@ jobs:
           CGO_ENABLED: '0'
         run: |
           for arch in amd64 arm64; do
-            GOOS=linux GOARCH=$arch go build -trimpath -ldflags "-s -w -X main.version=${{ needs.version.outputs.version }}" -o ../flux-panel-$arch .
+            GOOS=linux GOARCH=$arch go build -trimpath -ldflags "-s -w -X main.version=${{ needs.version.outputs.version }}" -o ../forwardz-panel-$arch .
           done
-          ../flux-panel-amd64 -v
+          ../forwardz-panel-amd64 -v
       - uses: actions/upload-artifact@v4
         with:
-          name: flux-panel
+          name: forwardz-panel
           path: |
-            flux-panel-amd64
-            flux-panel-arm64
+            forwardz-panel-amd64
+            forwardz-panel-arm64
 
   smoke-test:
     name: Smoke test (install on Ubuntu)
@@ -104,8 +104,8 @@ jobs:
       - name: Logs on failure
         if: failure()
         run: |
-          sudo journalctl -u flux-panel --no-pager -n 200 || true
-          sudo journalctl -u flux_agent --no-pager -n 200 || true
+          sudo journalctl -u forwardz-panel --no-pager -n 200 || true
+          sudo journalctl -u forwardz_agent --no-pager -n 200 || true
 
   release:
     name: Publish release
@@ -122,10 +122,10 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/flux-panel-amd64
-            artifacts/flux-panel-arm64
-            artifacts/gost-amd64
-            artifacts/gost-arm64
+            artifacts/forwardz-panel-amd64
+            artifacts/forwardz-panel-arm64
+            artifacts/forwardz-agent-amd64
+            artifacts/forwardz-agent-arm64
             artifacts/install.sh
             artifacts/panel_install.sh
             artifacts/zf.sh

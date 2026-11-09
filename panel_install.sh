@@ -1,6 +1,6 @@
 #!/bin/bash
 # =====================================================================
-#  flux-panel 面板管理脚本（二进制部署，无需 Docker）
+#  ForwardZ 面板管理脚本（二进制部署，无需 Docker）
 #
 #  面板是一个单独的二进制文件（Go 编写，前端页面已内置），无需 Java / Docker / Nginx，
 #  由 systemd 管理，网页、接口、节点通信共用一个端口。
@@ -14,15 +14,21 @@
 #
 #    ./panel_install.sh reset-admin  重置管理员账号（重置后打开面板重新设置用户名和密码）
 #
-#  离线安装：PANEL_BINARY=/path/to/flux-panel-amd64 ./panel_install.sh install
+#  离线安装：PANEL_BINARY=/path/to/forwardz-panel-amd64 ./panel_install.sh install
 #  非交互指定端口：PANEL_PORT=6365 ./panel_install.sh install
 # =====================================================================
 
 REPO="qqlikegi/flux-panel"
-INSTALL_DIR="/opt/flux-panel"
-SERVICE_NAME="flux-panel"
+INSTALL_DIR="/opt/forwardz-panel"
+SERVICE_NAME="forwardz-panel"
+BIN_NAME="forwardz-panel"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
-ENV_FILE="${INSTALL_DIR}/flux-panel.env"
+ENV_FILE="${INSTALL_DIR}/forwardz-panel.env"
+DB_FILE="${INSTALL_DIR}/data/forwardz.db"
+
+# 改名前（flux-panel）的安装位置：安装 / 更新时自动迁移
+LEGACY_DIR="/opt/flux-panel"
+LEGACY_SERVICE="flux-panel"
 RELEASE_URL="https://github.com/${REPO}/releases/latest/download"
 DEFAULT_PORT=6365
 
@@ -57,7 +63,7 @@ check_deps() {
 }
 
 is_installed() {
-  [[ -x "${INSTALL_DIR}/flux-panel" && -f "$SERVICE_FILE" ]]
+  [[ -x "${INSTALL_DIR}/${BIN_NAME}" && -f "$SERVICE_FILE" ]]
 }
 
 download() {
@@ -82,6 +88,65 @@ current_port() {
   local p
   p=$(grep -E '^SERVER_PORT=' "$ENV_FILE" 2>/dev/null | cut -d= -f2)
   echo "${p:-$DEFAULT_PORT}"
+}
+
+current_db() {
+  local p
+  p=$(grep -E '^DB_PATH=' "$ENV_FILE" 2>/dev/null | cut -d= -f2-)
+  echo "${p:-$DB_FILE}"
+}
+
+# 旧版 flux-panel 的安装（/opt/flux-panel + flux-panel.service）迁移为 ForwardZ：
+# 数据库、日志、端口和 JWT 密钥原样保留，旧服务停止并删除
+legacy_panel_installed() {
+  [[ -f "/etc/systemd/system/${LEGACY_SERVICE}.service" || -x "${LEGACY_DIR}/flux-panel" ]]
+}
+
+migrate_legacy_panel() {
+  legacy_panel_installed || return 0
+  if is_installed; then
+    echo "⚠️ 同时存在旧版 ${LEGACY_DIR} 和新版 ${INSTALL_DIR}，跳过迁移，旧版请手动处理"
+    return 0
+  fi
+  echo "♻️ 检测到旧版面板 ${LEGACY_DIR}，迁移为 ForwardZ（数据、端口、登录状态均保留）..."
+  local old_env="${LEGACY_DIR}/flux-panel.env" port secret old_db
+  port=$(grep -E '^SERVER_PORT=' "$old_env" 2>/dev/null | cut -d= -f2)
+  secret=$(grep -E '^JWT_SECRET=' "$old_env" 2>/dev/null | cut -d= -f2-)
+  old_db=$(grep -E '^DB_PATH=' "$old_env" 2>/dev/null | cut -d= -f2-)
+  old_db="${old_db:-${LEGACY_DIR}/data/gost.db}"
+
+  systemctl stop "$LEGACY_SERVICE" 2>/dev/null
+  systemctl disable "$LEGACY_SERVICE" >/dev/null 2>&1
+  rm -f "/etc/systemd/system/${LEGACY_SERVICE}.service"
+
+  mkdir -p "${INSTALL_DIR}/data" "${INSTALL_DIR}/logs"
+  if [[ -d "${LEGACY_DIR}/data" ]]; then
+    cp -a "${LEGACY_DIR}/data/." "${INSTALL_DIR}/data/"
+  fi
+  if [[ -d "${LEGACY_DIR}/logs" ]]; then
+    cp -a "${LEGACY_DIR}/logs/." "${INSTALL_DIR}/logs/" 2>/dev/null
+  fi
+  # 数据库改名为 forwardz.db（连同 WAL 文件）
+  local base
+  base=$(basename "$old_db")
+  if [[ -f "${INSTALL_DIR}/data/${base}" && ! -f "$DB_FILE" ]]; then
+    for ext in "" -wal -shm; do
+      [[ -f "${INSTALL_DIR}/data/${base}${ext}" ]] && mv -f "${INSTALL_DIR}/data/${base}${ext}" "${DB_FILE}${ext}"
+    done
+  fi
+  # 旧版自定义了 DB_PATH（不在 ${LEGACY_DIR}/data 下）时直接复制过来
+  if [[ ! -f "$DB_FILE" && -f "$old_db" ]]; then
+    for ext in "" -wal -shm; do
+      [[ -f "${old_db}${ext}" ]] && cp -f "${old_db}${ext}" "${DB_FILE}${ext}"
+    done
+  fi
+  [[ -x "${LEGACY_DIR}/flux-panel" ]] && cp -f "${LEGACY_DIR}/flux-panel" "${INSTALL_DIR}/${BIN_NAME}"
+
+  write_env "${port:-$DEFAULT_PORT}" "${secret:-$(generate_secret)}"
+  write_service
+  systemctl enable "$SERVICE_NAME" >/dev/null 2>&1
+  rm -rf "$LEGACY_DIR"
+  echo "✅ 已迁移到 ${INSTALL_DIR}，服务名改为 ${SERVICE_NAME}"
 }
 
 port_in_use() {
@@ -137,7 +202,7 @@ fetch_panel_binary() {
     # 使用本地二进制（离线安装 / CI 测试）
     cp -f "$PANEL_BINARY" "$tmp" || { rm -f "$tmp"; return 1; }
   else
-    download "${GH_PROXY}${RELEASE_URL}/flux-panel-${arch}" "$tmp" >&2 || { rm -f "$tmp"; return 1; }
+    download "${GH_PROXY}${RELEASE_URL}/forwardz-panel-${arch}" "$tmp" >&2 || { rm -f "$tmp"; return 1; }
   fi
   chmod +x "$tmp"
   if ! "$tmp" -v >/dev/null 2>&1; then
@@ -149,16 +214,16 @@ fetch_panel_binary() {
 }
 
 panel_version() {
-  "${INSTALL_DIR}/flux-panel" -v 2>/dev/null | awk '{print $2}'
+  "${INSTALL_DIR}/${BIN_NAME}" -v 2>/dev/null | awk '{print $2}'
 }
 
 write_env() {
   local port="$1" secret="$2"
   cat > "$ENV_FILE" <<EOF
-# flux-panel 运行配置（修改后执行 systemctl restart ${SERVICE_NAME} 生效）
+# ForwardZ 面板运行配置（修改后执行 systemctl restart ${SERVICE_NAME} 生效）
 SERVER_PORT=${port}
 JWT_SECRET=${secret}
-DB_PATH=${INSTALL_DIR}/data/gost.db
+DB_PATH=${DB_FILE}
 LOG_DIR=${INSTALL_DIR}/logs
 TZ=Asia/Shanghai
 EOF
@@ -168,7 +233,7 @@ EOF
 write_service() {
   cat > "$SERVICE_FILE" <<EOF
 [Unit]
-Description=Flux Panel
+Description=ForwardZ Panel
 After=network-online.target
 Wants=network-online.target
 
@@ -176,7 +241,7 @@ Wants=network-online.target
 Type=simple
 WorkingDirectory=${INSTALL_DIR}
 EnvironmentFile=${ENV_FILE}
-ExecStart=${INSTALL_DIR}/flux-panel
+ExecStart=${INSTALL_DIR}/${BIN_NAME}
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=30
@@ -214,16 +279,16 @@ stop_old_docker_panel() {
 }
 
 migrate_docker_data() {
-  [[ -f "${INSTALL_DIR}/data/gost.db" ]] && return 0
+  [[ -f "$DB_FILE" ]] && return 0
   [[ -f "$DOCKER_DB" ]] || return 0
   echo "🔍 检测到旧版 Docker 部署的数据库: $DOCKER_DB"
   read -p "是否迁移旧数据（用户、节点、隧道、转发等）？(Y/n): " ans
   if [[ "$ans" == "n" || "$ans" == "N" ]]; then
     return 0
   fi
-  cp -f "$DOCKER_DB" "${INSTALL_DIR}/data/gost.db"
+  cp -f "$DOCKER_DB" "$DB_FILE"
   for ext in -wal -shm; do
-    [[ -f "${DOCKER_DB}${ext}" ]] && cp -f "${DOCKER_DB}${ext}" "${INSTALL_DIR}/data/gost.db${ext}"
+    [[ -f "${DOCKER_DB}${ext}" ]] && cp -f "${DOCKER_DB}${ext}" "${DB_FILE}${ext}"
   done
   echo "✅ 旧数据已迁移"
 }
@@ -244,7 +309,7 @@ install_zf() {
   else
     curl -fsL --retry 2 --connect-timeout 15 -o "$tmp" "${GH_PROXY}${RELEASE_URL}/zf.sh" 2>/dev/null
   fi
-  if [[ -s "$tmp" ]] && grep -q "FLUX_ZF_MENU" "$tmp"; then
+  if [[ -s "$tmp" ]] && grep -q "FORWARDZ_ZF_MENU" "$tmp"; then
     install -m 755 "$tmp" "$ZF_BIN" && echo "⌨️ 快捷菜单已就绪：在 SSH 里输入 zf 即可管理"
   else
     echo "⚠️ 快捷菜单 zf 下载失败（不影响面板运行）"
@@ -255,7 +320,7 @@ install_zf() {
 # 本机没有面板也没有节点端时删除 zf
 cleanup_zf() {
   local f
-  for f in /etc/systemd/system/flux_agent*.service; do
+  for f in /etc/systemd/system/forwardz_agent*.service /etc/systemd/system/flux_agent*.service; do
     [[ -f "$f" ]] && return 0
   done
   rm -f "$ZF_BIN"
@@ -268,6 +333,12 @@ install_panel() {
   require_root
   check_deps
 
+  if legacy_panel_installed && ! is_installed; then
+    migrate_legacy_panel
+    echo "🔄 继续更新到最新版本..."
+    update_panel
+    return $?
+  fi
   if is_installed; then
     echo "⚠️ 面板已安装在 ${INSTALL_DIR}，如需升级请选择“更新面板”"
     return 1
@@ -294,7 +365,7 @@ install_panel() {
 
   local bin
   bin=$(fetch_panel_binary) || return 1
-  mv -f "$bin" "${INSTALL_DIR}/flux-panel"
+  mv -f "$bin" "${INSTALL_DIR}/${BIN_NAME}"
 
   migrate_docker_data
 
@@ -323,6 +394,7 @@ install_panel() {
 update_panel() {
   require_root
   check_deps
+  migrate_legacy_panel
 
   if ! is_installed; then
     echo "❌ 面板未安装，请先选择安装"
@@ -337,10 +409,12 @@ update_panel() {
   systemctl stop "$SERVICE_NAME"
 
   # 备份旧版本和数据库，更新失败时回滚
-  cp -f "${INSTALL_DIR}/flux-panel" "${INSTALL_DIR}/flux-panel.bak"
-  [[ -f "${INSTALL_DIR}/data/gost.db" ]] && cp -f "${INSTALL_DIR}/data/gost.db" "${INSTALL_DIR}/data/gost.db.bak"
+  cp -f "${INSTALL_DIR}/${BIN_NAME}" "${INSTALL_DIR}/${BIN_NAME}.bak"
+  local db
+  db=$(current_db)
+  [[ -f "$db" ]] && cp -f "$db" "${db}.bak"
 
-  mv -f "$bin" "${INSTALL_DIR}/flux-panel"
+  mv -f "$bin" "${INSTALL_DIR}/${BIN_NAME}"
   write_service
   systemctl start "$SERVICE_NAME"
 
@@ -352,7 +426,7 @@ update_panel() {
   else
     echo "❌ 新版本启动失败，正在回滚到旧版本..."
     systemctl stop "$SERVICE_NAME"
-    mv -f "${INSTALL_DIR}/flux-panel.bak" "${INSTALL_DIR}/flux-panel"
+    mv -f "${INSTALL_DIR}/${BIN_NAME}.bak" "${INSTALL_DIR}/${BIN_NAME}"
     systemctl start "$SERVICE_NAME"
     echo "↩️ 已回滚，请查看日志: journalctl -u ${SERVICE_NAME} -n 100"
     return 1
@@ -370,7 +444,7 @@ reset_admin() {
     echo "❌ 已取消"
     return 0
   fi
-  (set -a; . "$ENV_FILE"; set +a; "${INSTALL_DIR}/flux-panel" -reset-admin)
+  (set -a; . "$ENV_FILE"; set +a; "${INSTALL_DIR}/${BIN_NAME}" -reset-admin)
 }
 
 uninstall_panel() {
@@ -418,7 +492,7 @@ show_status() {
 
 show_menu() {
   echo "==============================================="
-  echo "          flux-panel 面板管理脚本"
+  echo "            ForwardZ 面板管理脚本"
   echo "==============================================="
   echo "1. 安装面板"
   echo "2. 更新面板"

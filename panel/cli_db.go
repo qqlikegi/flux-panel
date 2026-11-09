@@ -14,7 +14,7 @@ import (
 
 // ---------- 命令行：备份 / 导出数据库（供 zf 菜单调用，面板运行中也可以安全执行） ----------
 
-// backupDBTo 用 VACUUM INTO 生成一份完整、一致的数据库文件，可直接替换 data/gost.db 恢复
+// backupDBTo 用 VACUUM INTO 生成一份完整、一致的数据库文件，可直接替换面板数据库文件恢复
 func backupDBTo(dst string) error {
 	dst, err := filepath.Abs(dst)
 	if err != nil {
@@ -33,7 +33,7 @@ func backupDBTo(dst string) error {
 	return nil
 }
 
-// exportSQLTo 导出为纯文本 SQL（建表语句 + INSERT），可用 sqlite3 gost.db < xxx.sql 导入
+// exportSQLTo 导出为纯文本 SQL（建表语句 + INSERT），可用 sqlite3 forwardz.db < xxx.sql 导入
 func exportSQLTo(dst string) (err error) {
 	dst, err = filepath.Abs(dst)
 	if err != nil {
@@ -84,7 +84,7 @@ func exportSQLTo(dst string) (err error) {
 	}
 	rows.Close()
 
-	fmt.Fprintf(w, "-- flux-panel %s 数据库导出 %s\n", version, time.Now().Format("2006-01-02 15:04:05"))
+	fmt.Fprintf(w, "-- ForwardZ 面板 %s 数据库导出 %s\n", version, time.Now().Format("2006-01-02 15:04:05"))
 	fmt.Fprintln(w, "PRAGMA foreign_keys=OFF;")
 	fmt.Fprintln(w, "BEGIN TRANSACTION;")
 	for _, o := range objs {

@@ -1,9 +1,9 @@
 #!/bin/bash
 # =====================================================================
-#  flux_agent 节点端安装脚本
+#  ForwardZ 节点端（forwardz_agent）安装脚本
 #
 #  一台机器可以安装多个节点端实例，分别对接不同的面板（多面板共存）：
-#    实例名 = systemd 服务名，统一以 flux_agent 开头，例如 flux_agent、flux_agent_b
+#    实例名 = systemd 服务名，统一以 forwardz_agent 开头，例如 forwardz_agent、forwardz_agent2、forwardz_agent_b
 #    每个实例的目录为 /etc/<实例名>，服务为 <实例名>.service，互不影响
 #
 #  识别规则（面板的安装命令会带上 -f 面板指纹）：
@@ -12,19 +12,25 @@
 #    某个实例的节点密钥相同 → 同一个节点（面板改过指纹/地址），覆盖更新并写入新指纹
 #    都对不上 → 另一个面板，询问：共存安装（默认）/ 覆盖已有实例 / 取消
 #
+#  旧版（flux_agent*）实例会被一起识别，安装或更新时自动迁移为 forwardz_agent* 命名，配置原样保留。
+#
 #  用法：
 #    ./install.sh -a 面板地址 -s 密钥 -f 面板指纹  安装（面板「节点管理 → 安装」复制的命令）
-#    ./install.sh -a 面板地址 -s 密钥 -n 名称    直接安装到指定实例（不存在则新建，存在则覆盖）
-#    ./install.sh                                交互式菜单（安装 / 更新 / 卸载）
+#    ./install.sh -a 面板地址 -s 密钥 -n 名称      直接安装到指定实例（不存在则新建，存在则覆盖）
+#    ./install.sh                                  交互式菜单（安装 / 更新 / 卸载）
 #
 #  安装完成后，在 SSH 里输入 zf 即可打开快捷管理菜单。
-#  离线安装：AGENT_BINARY=/path/to/gost-amd64 ./install.sh -a ... -s ...
+#  离线安装：AGENT_BINARY=/path/to/forwardz-agent-amd64 ./install.sh -a ... -s ...
 # =====================================================================
 
-REPO="qqlikegi/flux-panel"
-SVC_PREFIX="flux_agent"
-SYSTEMD_DIR="${FLUX_SYSTEMD_DIR:-/etc/systemd/system}"
-AGENT_ROOT="${FLUX_AGENT_ROOT:-/etc}"   # 节点端实例目录的上级目录（仅测试时覆盖）
+REPO="qqlikegi/flux-panel"          # 发布 Release 的 GitHub 仓库
+SVC_PREFIX="forwardz_agent"         # 实例名 / 服务名前缀，也是程序文件名
+LEGACY_PREFIX="flux_agent"          # 改名前的实例前缀（自动迁移）
+CONF_NAME="forwardz.json"           # 面板下发的转发配置
+PANEL_SVC="forwardz-panel"
+LEGACY_PANEL_SVC="flux-panel"
+SYSTEMD_DIR="${FORWARDZ_SYSTEMD_DIR:-/etc/systemd/system}"
+AGENT_ROOT="${FORWARDZ_AGENT_ROOT:-/etc}"   # 实例目录的上级目录（仅测试时覆盖）
 ZF_BIN="/usr/local/bin/zf"
 SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
 
@@ -43,7 +49,7 @@ COUNTRY=$(curl -s --max-time 5 https://ipinfo.io/country 2>/dev/null)
 if [ "$COUNTRY" = "CN" ]; then
   GH_PROXY="https://ghfast.top/"
 fi
-DOWNLOAD_URL="${GH_PROXY}${RELEASE_URL}/gost-$(get_architecture)"
+DOWNLOAD_URL="${GH_PROXY}${RELEASE_URL}/forwardz-agent-$(get_architecture)"
 
 # ---------------------------------------------------------------------
 # 交互输入：通过管道执行脚本时也从终端读取
@@ -69,22 +75,35 @@ ask() {
 # 实例管理
 # ---------------------------------------------------------------------
 valid_instance_name() {
-  [[ "$1" =~ ^${SVC_PREFIX}[A-Za-z0-9_-]*$ && ${#1} -le 48 ]]
+  [[ "$1" =~ ^${SVC_PREFIX}([0-9]+|_[A-Za-z0-9_-]+)?$ && ${#1} -le 48 ]]
 }
 
-# 列出本机全部节点端实例（服务文件或带 config.json 的安装目录）
+is_legacy() {
+  [[ "$1" =~ ^${LEGACY_PREFIX}[A-Za-z0-9_-]*$ ]]
+}
+
+# 实例的程序文件
+instance_bin() {
+  if is_legacy "$1"; then
+    echo "$AGENT_ROOT/$1/flux_agent"
+  else
+    echo "$AGENT_ROOT/$1/$SVC_PREFIX"
+  fi
+}
+
+# 列出本机全部节点端实例（含旧版 flux_agent*），依据服务文件或带 config.json 的安装目录
 list_instances() {
   local f name
   {
-    for f in "$SYSTEMD_DIR"/${SVC_PREFIX}*.service; do
+    for f in "$SYSTEMD_DIR"/${SVC_PREFIX}*.service "$SYSTEMD_DIR"/${LEGACY_PREFIX}*.service; do
       [[ -f "$f" ]] || continue
       name=$(basename "$f" .service)
-      valid_instance_name "$name" && echo "$name"
+      { valid_instance_name "$name" || is_legacy "$name"; } && echo "$name"
     done
-    for f in "$AGENT_ROOT"/${SVC_PREFIX}*/config.json; do
+    for f in "$AGENT_ROOT"/${SVC_PREFIX}*/config.json "$AGENT_ROOT"/${LEGACY_PREFIX}*/config.json; do
       [[ -f "$f" ]] || continue
       name=$(basename "$(dirname "$f")")
-      valid_instance_name "$name" && echo "$name"
+      { valid_instance_name "$name" || is_legacy "$name"; } && echo "$name"
     done
   } | sort -u
 }
@@ -115,14 +134,16 @@ instance_state() {
 }
 
 print_instances() {
-  local i=1 name
+  local i=1 name tag
   for name in "$@"; do
-    printf "  %d. %-20s 面板: %-24s 指纹: %-9s 状态: %s\n" "$i" "$name" "$(instance_conf "$name" addr)" "$(instance_conf "$name" fingerprint || true)" "$(instance_state "$name")"
+    tag=""
+    is_legacy "$name" && tag="（旧版，将自动迁移）"
+    printf "  %d. %-22s 面板: %-24s 指纹: %-9s 状态: %s%s\n" "$i" "$name" "$(instance_conf "$name" addr)" "$(instance_conf "$name" fingerprint || true)" "$(instance_state "$name")" "$tag"
     i=$((i + 1))
   done
 }
 
-# 把用户输入的名称规范成实例名：不以 flux_agent 开头时自动加前缀 flux_agent_
+# 把用户输入的名称规范成实例名：不以 forwardz_agent 开头时自动加前缀 forwardz_agent_
 normalize_name() {
   local n="${1//[[:space:]]/}"
   [[ -z "$n" ]] && return 1
@@ -135,6 +156,15 @@ next_free_name() {
   local i=2
   while instance_exists "${SVC_PREFIX}${i}"; do i=$((i + 1)); done
   echo "${SVC_PREFIX}${i}"
+}
+
+# 第一个可用的实例名：优先 forwardz_agent
+first_free_name() {
+  if instance_exists "$SVC_PREFIX"; then
+    next_free_name
+  else
+    echo "$SVC_PREFIX"
+  fi
 }
 
 # 选择一个已有实例，结果在 $PICKED；只有一个时直接返回它
@@ -159,7 +189,7 @@ pick_instance() {
 # 询问新实例名称（共存安装）
 ask_new_instance() {
   local def n
-  def=$(next_free_name)
+  def=$(first_free_name)
   while true; do
     if ! ask "请输入新实例名称（直接回车使用 ${def}）: "; then
       INSTANCE="$def"
@@ -181,7 +211,44 @@ ask_new_instance() {
   done
 }
 
-# 决定本次安装到哪个实例，结果在 $INSTANCE
+# 写入实例的 systemd 服务文件
+write_unit() {
+  local name="$1" addr="$2" fp="$3" dir="$AGENT_ROOT/$1"
+  cat > "$SYSTEMD_DIR/${name}.service" <<EOF
+[Unit]
+Description=ForwardZ Agent (${name}, panel ${addr}${fp:+, fingerprint ${fp}})
+After=network.target
+
+[Service]
+WorkingDirectory=$dir
+ExecStart=$dir/$SVC_PREFIX
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+EOF
+}
+
+# 把旧版实例 $1 迁移为新实例 $2：连接配置、转发配置、设备标识原样保留，旧服务停止并删除
+migrate_legacy() {
+  local old="$1" new="$2" odir="$AGENT_ROOT/$1" ndir="$AGENT_ROOT/$2"
+  echo "♻️ 迁移旧版实例 ${old} → ${new}"
+  systemctl stop "$old" 2>/dev/null
+  systemctl disable "$old" >/dev/null 2>&1
+  rm -f "$SYSTEMD_DIR/${old}.service"
+  mkdir -p "$ndir"
+  [[ -f "$odir/config.json" ]] && mv -f "$odir/config.json" "$ndir/config.json"
+  if [[ -f "$odir/$CONF_NAME" ]]; then
+    mv -f "$odir/$CONF_NAME" "$ndir/$CONF_NAME"
+  elif [[ -f "$odir/gost.json" ]]; then
+    mv -f "$odir/gost.json" "$ndir/$CONF_NAME"
+  fi
+  [[ -f "$odir/device.id" ]] && mv -f "$odir/device.id" "$ndir/device.id"
+  [[ -f "$odir/flux_agent" && ! -f "$ndir/$SVC_PREFIX" ]] && mv -f "$odir/flux_agent" "$ndir/$SVC_PREFIX"
+  [[ -n "$old" && -d "$odir" ]] && rm -rf "$odir"
+}
+
+# 决定本次安装到哪个实例，结果在 $INSTANCE（可能是旧版实例名，安装时再迁移）
 choose_install_instance() {
   if [[ -n "$INSTANCE" ]]; then
     local n
@@ -196,7 +263,7 @@ choose_install_instance() {
   local existing=() name
   mapfile -t existing < <(list_instances)
   if [[ ${#existing[@]} -eq 0 ]]; then
-    INSTANCE="$SVC_PREFIX"
+    INSTANCE=$(first_free_name)
     return 0
   fi
 
@@ -237,7 +304,7 @@ choose_install_instance() {
   echo "  2. 覆盖已有实例（原实例的连接配置会被替换）"
   echo "  3. 取消安装"
   if ! ask "请输入选项 (1-3，默认 1): "; then
-    INSTANCE=$(next_free_name)
+    INSTANCE=$(first_free_name)
     echo "ℹ️ 当前没有可交互的终端，自动共存安装为实例 ${INSTANCE}"
     return 0
   fi
@@ -278,7 +345,7 @@ install_zf() {
   else
     curl -fsL --retry 2 --connect-timeout 15 -o "$tmp" "${GH_PROXY}${RELEASE_URL}/zf.sh" 2>/dev/null
   fi
-  if [[ -s "$tmp" ]] && grep -q "FLUX_ZF_MENU" "$tmp"; then
+  if [[ -s "$tmp" ]] && grep -q "FORWARDZ_ZF_MENU" "$tmp"; then
     install -m 755 "$tmp" "$ZF_BIN" && echo "⌨️ 已安装快捷菜单：在 SSH 里输入 zf 即可管理"
   else
     echo "⚠️ 快捷菜单 zf 下载失败（不影响节点运行）"
@@ -286,9 +353,9 @@ install_zf() {
   rm -f "$tmp"
 }
 
-# 本机没有任何 flux 服务时删除 zf
+# 本机没有任何 ForwardZ 服务时删除 zf
 cleanup_zf() {
-  if [[ -z "$(list_instances)" && ! -f "$SYSTEMD_DIR/flux-panel.service" ]]; then
+  if [[ -z "$(list_instances)" && ! -f "$SYSTEMD_DIR/${PANEL_SVC}.service" && ! -f "$SYSTEMD_DIR/${LEGACY_PANEL_SVC}.service" ]]; then
     rm -f "$ZF_BIN"
   fi
 }
@@ -298,7 +365,7 @@ cleanup_zf() {
 # ---------------------------------------------------------------------
 show_menu() {
   echo "==============================================="
-  echo "            flux_agent 节点端管理脚本"
+  echo "          ForwardZ 节点端管理脚本"
   echo "==============================================="
   echo "请选择操作："
   echo "1. 安装"
@@ -397,16 +464,16 @@ if [[ -n "$FINGERPRINT" && ! "$FINGERPRINT" =~ ^[A-Za-z0-9]{8}$ ]]; then
   FINGERPRINT=""
 fi
 
-# 下载节点端二进制到临时文件，成功后输出路径
+# 下载节点端程序到临时文件，成功后输出路径
 fetch_agent_binary() {
   local tmp
   tmp=$(mktemp)
   if [[ -n "$AGENT_BINARY" ]]; then
-    # 使用本地二进制（离线安装 / CI 测试）
+    # 使用本地文件（离线安装 / CI 测试）
     echo "📦 使用本地文件: $AGENT_BINARY" >&2
     cp -f "$AGENT_BINARY" "$tmp"
   else
-    echo "⬇️ 下载 flux_agent: $DOWNLOAD_URL" >&2
+    echo "⬇️ 下载 ForwardZ 节点端: $DOWNLOAD_URL" >&2
     curl -fL --retry 3 --connect-timeout 15 "$DOWNLOAD_URL" -o "$tmp" >&2
   fi
   if [[ ! -s "$tmp" ]]; then
@@ -421,45 +488,57 @@ fetch_agent_binary() {
 # ---------------------------------------------------------------------
 # 安装
 # ---------------------------------------------------------------------
-install_flux_agent() {
+install_agent() {
   get_config_params
   choose_install_instance
 
-  local dir="$AGENT_ROOT/${INSTANCE}"
-  local svc="${INSTANCE}"
-  local service_file="$SYSTEMD_DIR/${svc}.service"
-  echo "🚀 开始安装节点端（实例 ${INSTANCE}）..."
+  # 判断是否同一个面板要在迁移之前做（迁移会改变实例名）
+  local same=0 old_addr
+  if [[ -f "$AGENT_ROOT/$INSTANCE/config.json" ]]; then
+    same_panel "$INSTANCE" && same=1
+    old_addr=$(instance_conf "$INSTANCE" addr)
+    # 本次没带指纹（旧版面板的安装命令）时，同一个面板的实例沿用原来的指纹
+    if [[ -z "$FINGERPRINT" && $same -eq 1 ]]; then
+      FINGERPRINT=$(instance_conf "$INSTANCE" fingerprint)
+    fi
+  fi
 
   check_and_install_tcpkill
-
   local bin
   bin=$(fetch_agent_binary) || exit 1
   echo "✅ 下载完成"
 
-  # 停止已有服务
-  if [[ -f "$service_file" ]]; then
+  # 旧版实例：先迁移为新命名
+  if is_legacy "$INSTANCE"; then
+    local new
+    new=$(first_free_name)
+    migrate_legacy "$INSTANCE" "$new"
+    INSTANCE="$new"
+  fi
+
+  local dir="$AGENT_ROOT/${INSTANCE}"
+  local svc="${INSTANCE}"
+  echo "🚀 开始安装 ForwardZ 节点端（实例 ${INSTANCE}）..."
+
+  if [[ -f "$SYSTEMD_DIR/${svc}.service" ]]; then
     echo "🔍 检测到已存在的 ${svc} 服务，先停止"
     systemctl stop "$svc" 2>/dev/null && echo "🛑 停止服务"
   fi
 
-  # 本次没带指纹（旧版面板的安装命令）时，同一个面板的实例沿用原来的指纹
-  if [[ -z "$FINGERPRINT" && -f "$dir/config.json" ]] && same_panel "$INSTANCE"; then
-    FINGERPRINT=$(instance_conf "$INSTANCE" fingerprint)
-  fi
-
-  # 覆盖对接另一个面板的实例时，旧面板下发的转发配置不能保留；同一个面板则保留配置
   mkdir -p "$dir"
-  if [[ -f "$dir/config.json" && -f "$dir/gost.json" ]] && ! same_panel "$INSTANCE"; then
-    echo "🧹 原实例对接的是另一个面板 $(instance_conf "$INSTANCE" addr)，清空旧的转发配置（已改名为 gost.json.old）"
-    mv -f "$dir/gost.json" "$dir/gost.json.old"
+  # 改名前的转发配置
+  [[ -f "$dir/gost.json" && ! -f "$dir/$CONF_NAME" ]] && mv -f "$dir/gost.json" "$dir/$CONF_NAME"
+  # 覆盖对接另一个面板的实例时，旧面板下发的转发配置不能保留；同一个面板则保留配置
+  if [[ -n "$old_addr" && $same -eq 0 && -f "$dir/$CONF_NAME" ]]; then
+    echo "🧹 原实例对接的是另一个面板 ${old_addr}，清空旧的转发配置（已改名为 ${CONF_NAME}.old）"
+    mv -f "$dir/$CONF_NAME" "$dir/$CONF_NAME.old"
   fi
 
-  mv -f "$bin" "$dir/flux_agent"
-  chmod +x "$dir/flux_agent"
-  echo "🔎 flux_agent 版本：$("$dir/flux_agent" -V 2>/dev/null)"
+  mv -f "$bin" "$dir/$SVC_PREFIX"
+  chmod +x "$dir/$SVC_PREFIX"
+  echo "🔎 节点端版本：$("$dir/$SVC_PREFIX" -V 2>/dev/null)"
 
-  # 写入 config.json（安装时总是创建新的）
-  echo "📄 创建新配置: config.json"
+  echo "📄 写入连接配置: config.json"
   cat > "$dir/config.json" <<EOF
 {
   "addr": "$SERVER_ADDR",
@@ -467,30 +546,14 @@ install_flux_agent() {
   "fingerprint": "$FINGERPRINT"
 }
 EOF
-
-  if [[ -f "$dir/gost.json" ]]; then
-    echo "⏭️ 跳过配置文件: gost.json (已存在)"
+  if [[ -f "$dir/$CONF_NAME" ]]; then
+    echo "⏭️ 保留转发配置: ${CONF_NAME}"
   else
-    echo "📄 创建新配置: gost.json"
-    echo "{}" > "$dir/gost.json"
+    echo "{}" > "$dir/$CONF_NAME"
   fi
   chmod 600 "$dir"/*.json
 
-  # 创建 systemd 服务
-  cat > "$service_file" <<EOF
-[Unit]
-Description=Flux_agent Proxy Service (${INSTANCE}, panel ${SERVER_ADDR}${FINGERPRINT:+, fingerprint ${FINGERPRINT}})
-After=network.target
-
-[Service]
-WorkingDirectory=$dir
-ExecStart=$dir/flux_agent
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
+  write_unit "$svc" "$SERVER_ADDR" "$FINGERPRINT"
   systemctl daemon-reload
   systemctl enable "$svc" >/dev/null 2>&1
   systemctl start "$svc"
@@ -517,30 +580,42 @@ EOF
 # 更新
 # ---------------------------------------------------------------------
 update_one() {
-  local name="$1" bin="$2" dir="$AGENT_ROOT/$1"
+  local name="$1" bin="$2"
+  if is_legacy "$name"; then
+    local new
+    new=$(first_free_name)
+    migrate_legacy "$name" "$new"
+    write_unit "$new" "$(instance_conf "$new" addr)" "$(instance_conf "$new" fingerprint)"
+    systemctl daemon-reload
+    systemctl enable "$new" >/dev/null 2>&1
+    name="$new"
+  fi
+  local dir="$AGENT_ROOT/$name" exe="$AGENT_ROOT/$name/$SVC_PREFIX"
   echo "🔄 更新实例 ${name} ..."
-  cp -f "$dir/flux_agent" "$dir/flux_agent.bak" 2>/dev/null
+  [[ -f "$exe" ]] && cp -f "$exe" "$exe.bak"
   systemctl stop "$name" 2>/dev/null
-  cp -f "$bin" "$dir/flux_agent"
-  chmod +x "$dir/flux_agent"
+  cp -f "$bin" "$exe"
+  chmod +x "$exe"
   systemctl start "$name"
   sleep 2
   if systemctl is-active --quiet "$name"; then
-    rm -f "$dir/flux_agent.bak"
-    echo "✅ ${name} 已更新：$("$dir/flux_agent" -V 2>/dev/null)"
-  else
+    rm -f "$exe.bak"
+    echo "✅ ${name} 已更新：$("$exe" -V 2>/dev/null)"
+  elif [[ -f "$exe.bak" ]]; then
     echo "❌ ${name} 新版本启动失败，回滚到旧版本"
     systemctl stop "$name" 2>/dev/null
-    mv -f "$dir/flux_agent.bak" "$dir/flux_agent"
+    mv -f "$exe.bak" "$exe"
     systemctl start "$name"
+  else
+    echo "❌ ${name} 启动失败，请查看日志: journalctl -u ${name} -n 50"
   fi
 }
 
-update_flux_agent() {
+update_agent() {
   local existing=() targets=() name
   mapfile -t existing < <(list_instances)
   if [[ ${#existing[@]} -eq 0 ]]; then
-    echo "❌ flux_agent 未安装，请先选择安装。"
+    echo "❌ 节点端未安装，请先选择安装。"
     return 1
   fi
   if [[ ${#existing[@]} -eq 1 ]]; then
@@ -582,11 +657,11 @@ uninstall_one() {
   echo "🧹 已卸载实例 ${name}"
 }
 
-uninstall_flux_agent() {
+uninstall_agent() {
   local existing=()
   mapfile -t existing < <(list_instances)
   if [[ ${#existing[@]} -eq 0 ]]; then
-    echo "ℹ️ flux_agent 未安装"
+    echo "ℹ️ 节点端未安装"
     return 0
   fi
   if [[ ${#existing[@]} -gt 1 ]]; then
@@ -611,7 +686,7 @@ uninstall_flux_agent() {
 main() {
   # 提供了命令行参数，直接执行安装
   if [[ -n "$SERVER_ADDR" && -n "$SECRET" ]]; then
-    install_flux_agent
+    install_agent
     delete_self
     exit 0
   fi
@@ -620,9 +695,9 @@ main() {
     show_menu
     ask "请输入选项 (1-4): " || { echo "❌ 没有可交互的终端，请使用 -a 和 -s 参数安装"; exit 1; }
     case $REPLY in
-      1) install_flux_agent; delete_self; exit 0 ;;
-      2) update_flux_agent; delete_self; exit 0 ;;
-      3) uninstall_flux_agent; delete_self; exit 0 ;;
+      1) install_agent; delete_self; exit 0 ;;
+      2) update_agent; delete_self; exit 0 ;;
+      3) uninstall_agent; delete_self; exit 0 ;;
       4) echo "👋 退出脚本"; delete_self; exit 0 ;;
       *) echo "❌ 无效选项，请输入 1-4"; echo "" ;;
     esac

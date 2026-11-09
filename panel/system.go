@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"errors"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -266,4 +267,25 @@ func fingerprintSave(c *Ctx) any {
 	}
 	setSetting(fingerprintKey, fp)
 	return ok(map[string]any{"fingerprint": fp})
+}
+
+// ---------- 品牌：ForwardZ ----------
+
+// releaseRepo 发布 Release（安装脚本、程序文件）的 GitHub 仓库。仓库改名后改这里即可（GitHub 会自动跳转旧地址）
+const releaseRepo = "qqlikegi/flux-panel"
+
+// migrateBranding 旧版本默认的应用名 flux 改为 ForwardZ；用户自己改过的名字不动
+func migrateBranding() {
+	mustExec("UPDATE vite_config SET value = 'ForwardZ', time = ? WHERE name = 'app_name' AND value = 'flux'", nowMs())
+}
+
+// defaultDBPath 未设置 DB_PATH 时的数据库位置：data/forwardz.db；改名前的 data/gost.db 仍存在时继续使用它
+func defaultDBPath() string {
+	const def, legacy = "data/forwardz.db", "data/gost.db"
+	if _, err := os.Stat(def); err != nil {
+		if _, err := os.Stat(legacy); err == nil {
+			return legacy
+		}
+	}
+	return def
 }

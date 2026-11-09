@@ -1,4 +1,4 @@
-// flux-panel 面板后端（Go 版）。
+// ForwardZ 面板后端（Go 版）。
 // 单个二进制同时提供：前端页面、/api/v1 接口、节点 WebSocket(/system-info)、节点流量上报(/flow/*)。
 package main
 
@@ -48,14 +48,14 @@ func main() {
 	showFingerprint := flag.Bool("fingerprint", false, "显示面板指纹")
 	flag.Parse()
 	if *showVersion {
-		fmt.Println("flux-panel", version)
+		fmt.Println("forwardz-panel", version)
 		return
 	}
 
 	cfg = Config{
 		Port:      env("SERVER_PORT", "6365"),
 		JWTSecret: env("JWT_SECRET", ""),
-		DBPath:    env("DB_PATH", "data/gost.db"),
+		DBPath:    env("DB_PATH", defaultDBPath()),
 		LogDir:    env("LOG_DIR", "logs"),
 		WebDir:    env("WEB_DIR", ""),
 	}
@@ -107,6 +107,7 @@ func main() {
 
 	initSetupState()
 	ensurePanelFingerprint()
+	migrateBranding()
 	backfillDailyFlow()
 	startTasks()
 	go backupScheduler()
@@ -117,7 +118,7 @@ func main() {
 		ReadHeaderTimeout: 15 * time.Second,
 	}
 	go func() {
-		log.Printf("flux-panel %s 已启动，监听端口 %s，数据库 %s", version, cfg.Port, cfg.DBPath)
+		log.Printf("ForwardZ 面板 %s 已启动，监听端口 %s，数据库 %s", version, cfg.Port, cfg.DBPath)
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatalf("HTTP 服务启动失败: %v", err)
 		}

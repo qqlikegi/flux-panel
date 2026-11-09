@@ -1,18 +1,10 @@
-# flux-panel转发面板 哆啦A梦转发面板
+# ForwardZ 转发面板
 
-# 赞助商
-<p align="center">
-  <a href="https://vps.town" style="margin: 0 20px; text-align:center;">
-    <img src="./doc/vpstown.png" width="300">
-  </a>
+ForwardZ 是一套开源的流量转发管理系统，由 **ForwardZ Panel（面板）** 和 **ForwardZ Agent（节点端）** 组成。
 
-  <a href="https://whmcs.as211392.com" style="margin: 0 20px; text-align:center;">
-    <img src="./doc/as211392.png" width="300">
-  </a>
-</p>
+- 面板基于 [flux-panel](https://github.com/bqlpfy/flux-panel)（Apache License 2.0）二次开发，Go 单文件，内置前端；
+- 节点端基于 [GOST v3.1.0](https://github.com/go-gost/gost)（[go-gost/x](https://github.com/go-gost/x)，MIT License）深度修改，程序名、服务名、配置文件、协议标识均已独立，可与本机其他 gost 程序共存，互不冲突。
 
-
-本项目基于 [go-gost/gost](https://github.com/go-gost/gost) 和 [go-gost/x](https://github.com/go-gost/x) 两个开源库，实现了转发面板。
 ---
 ## 特性
 
@@ -26,10 +18,10 @@
 
 ## 部署流程
 ---
-本分支基于 2.0.7 开发版二次开发，**不再使用 Docker，也不需要 Java**：
+ForwardZ 基于 flux-panel 2.0.7 开发版二次开发，**不再使用 Docker，也不需要 Java**：
 
 - **面板**：Go 编写的单个二进制文件，前端页面已内置，数据库为内置 SQLite，网页 / 接口 / 节点通信共用一个端口，由 systemd 管理。
-- **节点端**：单个二进制文件（基于 gost），由 systemd 管理。
+- **节点端**：ForwardZ Agent 单个二进制文件（基于 GOST 3.1.0 修改），由 systemd 管理，`forwardz_agent -V` 查看版本。
 - 支持 Linux **amd64 / arm64**，二进制从本仓库 [Releases](https://github.com/qqlikegi/flux-panel/releases) 下载。
 
 ### 安装面板
@@ -45,9 +37,9 @@ curl -L https://raw.githubusercontent.com/qqlikegi/flux-panel/main/panel_install
 ./panel_install.sh uninstall    # 卸载（可选择保留数据库）
 ```
 
-- 安装目录：`/opt/flux-panel`（程序 `flux-panel`，数据库 `data/gost.db`，日志 `logs/`）
-- 配置文件：`/opt/flux-panel/flux-panel.env`（端口、JWT 密钥等，修改后 `systemctl restart flux-panel`）
-- 查看日志：`journalctl -u flux-panel -f`
+- 安装目录：`/opt/forwardz-panel`（程序 `forwardz-panel`，数据库 `data/forwardz.db`，日志 `logs/`）
+- 配置文件：`/opt/forwardz-panel/forwardz-panel.env`（端口、JWT 密钥等，修改后 `systemctl restart forwardz-panel`）
+- 查看日志：`journalctl -u forwardz-panel -f`
 - 从旧版 Docker 部署升级：安装时会自动检测旧容器和旧数据库，按提示迁移即可，数据库结构完全兼容。
 
 ### 安装节点端
@@ -61,9 +53,9 @@ curl -L https://raw.githubusercontent.com/qqlikegi/flux-panel/main/panel_install
 | 本机没有节点端 | 全新安装 |
 | 某个实例的面板指纹相同 | 同一个面板：覆盖更新该实例，保留转发配置 |
 | 某个实例的节点密钥相同 | 同一个节点（面板改过指纹 / 地址，或旧版装的实例）：覆盖更新并写入新指纹 |
-| 都对不上 | 另一个面板：询问 `1` 共存安装（默认，可自定义名称，例如输入 `b` 得到 `flux_agent_b`）/ `2` 覆盖已有实例 / `3` 取消 |
+| 都对不上 | 另一个面板：询问 `1` 共存安装（默认，可自定义名称，例如输入 `b` 得到 `forwardz_agent_b`）/ `2` 覆盖已有实例 / `3` 取消 |
 
-每个实例的服务名统一以 `flux_agent` 开头，目录为 `/etc/<实例名>`，也可以用 `-n 名称` 直接指定实例。注意：
+每个实例的服务名统一以 `forwardz_agent` 开头（第一个为 `forwardz_agent`，之后 `forwardz_agent2`…），目录为 `/etc/<实例名>`，程序为 `/etc/<实例名>/forwardz_agent`，面板下发的转发配置为 `forwardz.json`，也可以用 `-n 名称` 直接指定实例。注意：
 
 - 同一台机器上各面板分配的端口范围不能重叠；
 - 用同一份备份恢复出两套面板时，两套指纹相同，请把其中一套的指纹改掉。
@@ -73,24 +65,32 @@ curl -L https://raw.githubusercontent.com/qqlikegi/flux-panel/main/panel_install
 
 - 更新到最新版（从 GitHub Release 下载，面板更新失败自动回滚）
 - 启动 / 停止运行 / 重启 / 查看状态
-- 备份数据库：输入保存目录（如 `/root` 或 `/root/`），目录不存在时会询问是否新建（`1` 继续 `2` 取消）。面板备份为可直接替换恢复的 `.db` 文件，运行中也能备份；节点端没有数据库，备份的是 `config.json` 和 `gost.json`
-- 导出数据库：面板导出为 SQL 文本，节点端导出转发配置 `gost.json`
+- 备份数据库：输入保存目录（如 `/root` 或 `/root/`），目录不存在时会询问是否新建（`1` 继续 `2` 取消）。面板备份为可直接替换恢复的 `.db` 文件，运行中也能备份；节点端没有数据库，备份的是 `config.json` 和 `forwardz.json`
+- 导出数据库：面板导出为 SQL 文本，节点端导出转发配置 `forwardz.json`
 - 卸载
 
-面板程序本身也支持命令行备份：`flux-panel -backup /root/a.db`、`flux-panel -export /root/a.sql`（需先加载 `flux-panel.env` 中的 `DB_PATH`）。
+面板程序本身也支持命令行备份：`forwardz-panel -backup /root/a.db`、`forwardz-panel -export /root/a.sql`、`forwardz-panel -fingerprint`（需先加载 `forwardz-panel.env` 中的 `DB_PATH`）。
+
+### 从 flux-panel 升级到 ForwardZ
+无需手动操作，旧数据全部保留：
+
+- **面板**：在旧机器上运行新版 `panel_install.sh update`（或 `zf` → 更新到最新版），会自动把 `/opt/flux-panel` 迁移到 `/opt/forwardz-panel`，服务 `flux-panel` 换成 `forwardz-panel`，数据库改名为 `forwardz.db`，端口和 JWT 密钥保持不变；
+- **节点端**：重新执行面板里的安装命令，或 `zf` → 更新到最新版，旧实例 `flux_agent*` 会自动迁移为 `forwardz_agent*`，连接配置、设备 ID 和转发配置（`gost.json` → `forwardz.json`）都会带过去；
+- 云存储里旧的 `flux-panel-backup-*` 备份文件仍会被识别、列出和轮转。
 
 ### 手动运行（不用脚本）
 ```bash
-chmod +x flux-panel-amd64
-SERVER_PORT=6365 DB_PATH=./data/gost.db ./flux-panel-amd64
+chmod +x forwardz-panel-amd64
+SERVER_PORT=6365 DB_PATH=./data/forwardz.db ./forwardz-panel-amd64
 ```
-可用环境变量：`SERVER_PORT`（默认 6365）、`DB_PATH`（默认 `data/gost.db`）、`LOG_DIR`（默认 `logs`）、`JWT_SECRET`（不填则自动生成并保存在数据库同目录的 `jwt.secret`）。
+可用环境变量：`SERVER_PORT`（默认 6365）、`DB_PATH`（默认 `data/forwardz.db`，旧的 `data/gost.db` 存在时自动沿用）、`LOG_DIR`（默认 `logs`）、`JWT_SECRET`（不填则自动生成并保存在数据库同目录的 `jwt.secret`）。
 
 ### 从源码构建
 ```bash
 cd vite-frontend && npm install --legacy-peer-deps && npm run build && cd ..
 rm -rf panel/web/dist && cp -r vite-frontend/dist panel/web/dist
-cd panel && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o flux-panel-amd64 .
+cd panel && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o forwardz-panel-amd64 .
+cd ../agent && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o forwardz-agent-amd64 .
 ```
 
 #### 管理员账号
@@ -132,12 +132,8 @@ cd panel && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-
 请务必在合法、合规、安全的前提下使用本项目。  
 
 ---
-## ⭐ 喝杯咖啡！（USDT）
+## 许可证与致谢
 
-| 网络       | 地址                                                                 |
-|------------|----------------------------------------------------------------------|
-| BNB(BEP20) | `0x755492c03728851bbf855daa28a1e089f9aca4d1`                          |
-| TRC20      | `TYh2L3xxXpuJhAcBWnt3yiiADiCSJLgUm7`                                  |
-| Aptos      | `0xf2f9fb14749457748506a8281628d556e8540d1eb586d202cd8b02b99d369ef8`  |
-
-[![Star History Chart](https://api.star-history.com/svg?repos=bqlpfy/flux-panel&type=Date)](https://www.star-history.com/#bqlpfy/flux-panel&Date)
+- ForwardZ 面板部分沿用 flux-panel 的 [Apache License 2.0](./LICENSE)，感谢原作者 [bqlpfy/flux-panel](https://github.com/bqlpfy/flux-panel)；
+- ForwardZ Agent 基于 GOST v3.1.0 修改，原版权声明见 [agent/LICENSE-gost](./agent/LICENSE-gost)（MIT License, Copyright (c) 2016 ginuerzh），感谢 [go-gost](https://github.com/go-gost) 项目；
+- 节点端仍依赖未经修改的上游模块 `github.com/go-gost/core`、`relay`、`gosocks`、`plugin`、`tls-dissector`（MIT License）。

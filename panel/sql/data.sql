@@ -4,4 +4,4 @@ VALUES (1, 'admin_user', '3c85cdebade1c51cf64ca9f3c09d182d', 0, 2727251700000, 9
 
 
 INSERT OR IGNORE INTO vite_config (id, name, value, time) 
-VALUES (1, 'app_name', 'flux', 1755147963000);
+VALUES (1, 'app_name', 'ForwardZ', 1755147963000);
