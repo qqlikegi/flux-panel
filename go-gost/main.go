@@ -122,7 +122,11 @@ func main() {
 	// 面板下发的配置始终保存在工作目录的 gost.json（见 socket.saveConfig）。
 	// 未指定 -C 时 gost 默认优先读取 /etc/gost/gost.*，机器上残留 1.x 配置时
 	// 重启后会加载旧配置，导致服务、限速规则丢失。这里固定读取工作目录的 gost.json。
+	// 工作目录没有 gost.json 时（手动运行、文件被误删）自动创建空配置，避免启动直接退出。
 	if cfgFile == "" {
+		if _, err := os.Stat("gost.json"); os.IsNotExist(err) {
+			_ = os.WriteFile("gost.json", []byte("{}\n"), 0644)
+		}
 		if _, err := os.Stat("gost.json"); err == nil {
 			cfgFile = "gost.json"
 		}
