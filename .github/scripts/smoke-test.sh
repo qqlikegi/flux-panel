@@ -46,6 +46,7 @@ expect_ok /node/create '{"name":"ci","serverIp":"127.0.0.1","port":"31000-31010"
 SECRET=$(sqlite3 /opt/forwardz-panel/data/forwardz.db "select secret from node where id=1")
 FP=$(api /fingerprint/get | jq -r .data.fingerprint)
 [[ "$FP" =~ ^[A-Za-z0-9]{8}$ ]] || fail "面板指纹格式不对: $FP"
+expect_ok /config/update-single "{\"name\":\"ip\",\"value\":\"127.0.0.1:${PORT}\"}"   # 生成安装命令前需先设置面板地址
 api /node/install '{"id":1}' | jq -r .data | grep -q -- "-f $FP" || fail "安装命令未带面板指纹"
 cp "$ROOT/install.sh" /tmp/agent_install.sh   # 安装脚本执行完会删除自身
 AGENT_BINARY="$ART/forwardz-agent-amd64" ZF_SCRIPT="$ROOT/zf.sh" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET" -f "$FP"
