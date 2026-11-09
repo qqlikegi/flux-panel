@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Input, Textarea } from "@heroui/input";
+import { NumberInput, isValidNumber } from "@/components/number-input";
 import { Select, SelectItem } from "@heroui/select";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Chip } from "@heroui/chip";
@@ -172,7 +173,7 @@ export default function TunnelPage() {
       }
     }
     
-    if (form.trafficRatio < 0.0 || form.trafficRatio > 100.0) {
+    if (Number.isNaN(form.trafficRatio) || form.trafficRatio < 0.0 || form.trafficRatio > 100.0) {
       newErrors.trafficRatio = '流量倍率必须在0.0-100.0之间';
     }
     
@@ -747,15 +748,14 @@ export default function TunnelPage() {
                         <SelectItem key="2">双向计算（上传+下载）</SelectItem>
                       </Select>
 
-                      <Input
+                      <NumberInput
                         label="流量倍率"
                         placeholder="请输入流量倍率"
-                        type="number"
-                        value={form.trafficRatio.toString()}
-                        onChange={(e) => setForm(prev => ({ 
-                          ...prev, 
-                          trafficRatio: parseFloat(e.target.value) || 0
-                        }))}
+                        value={form.trafficRatio}
+                        onValueChange={(value) => setForm(prev => ({ ...prev, trafficRatio: value }))}
+                        decimal
+                        min={0}
+                        max={100}
                         isInvalid={!!errors.trafficRatio}
                         errorMessage={errors.trafficRatio}
                         variant="bordered"
@@ -1220,6 +1220,7 @@ export default function TunnelPage() {
                     color="primary" 
                     onPress={handleSubmit}
                     isLoading={submitLoading}
+                    isDisabled={!isValidNumber(form.trafficRatio, 0, 100)}
                   >
                     {submitLoading ? (isEdit ? '更新中...' : '创建中...') : (isEdit ? '更新' : '创建')}
                   </Button>

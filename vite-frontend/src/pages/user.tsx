@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from "@heroui/button";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Input } from "@heroui/input";
+import { NumberInput, isValidNumber } from "@/components/number-input";
 import { 
   Table, 
   TableHeader, 
@@ -770,28 +771,20 @@ export default function UserPage() {
                 placeholder={isEdit ? '留空则不修改密码' : '请输入密码'}
                 isRequired={!isEdit}
               />
-              <Input
+              <NumberInput
                 label="流量限制(GB)"
-                type="number"
-                value={userForm.flow.toString()}
-                onChange={(e) => {
-                  const value = Math.min(Math.max(Number(e.target.value) || 0, 1), 99999);
-                  setUserForm(prev => ({ ...prev, flow: value }));
-                }}
-                min="1"
-                max="99999"
+                value={userForm.flow}
+                onValueChange={(value) => setUserForm(prev => ({ ...prev, flow: value }))}
+                min={1}
+                max={99999}
                 isRequired
               />
-              <Input
+              <NumberInput
                 label="转发数量"
-                type="number"
-                value={userForm.num.toString()}
-                onChange={(e) => {
-                  const value = Math.min(Math.max(Number(e.target.value) || 0, 1), 99999);
-                  setUserForm(prev => ({ ...prev, num: value }));
-                }}
-                min="1"
-                max="99999"
+                value={userForm.num}
+                onValueChange={(value) => setUserForm(prev => ({ ...prev, num: value }))}
+                min={1}
+                max={99999}
                 isRequired
               />
               <Select
@@ -848,6 +841,7 @@ export default function UserPage() {
               color="primary"
               onPress={handleSubmitUser}
               isLoading={userFormLoading}
+              isDisabled={!isValidNumber(userForm.flow, 1, 99999) || !isValidNumber(userForm.num, 1, 99999)}
             >
               确定
             </Button>
@@ -913,28 +907,20 @@ export default function UserPage() {
                       ]}
                     </Select>
                     
-                    <Input
+                    <NumberInput
                       label="流量限制(GB)"
-                      type="number"
-                      value={tunnelForm.flow.toString()}
-                      onChange={(e) => {
-                        const value = Math.min(Math.max(Number(e.target.value) || 0, 1), 99999);
-                        setTunnelForm(prev => ({ ...prev, flow: value }));
-                      }}
-                      min="1"
-                      max="99999"
+                      value={tunnelForm.flow}
+                      onValueChange={(value) => setTunnelForm(prev => ({ ...prev, flow: value }))}
+                      min={1}
+                      max={99999}
                     />
-                    
-                    <Input
+
+                    <NumberInput
                       label="转发数量"
-                      type="number"
-                      value={tunnelForm.num.toString()}
-                      onChange={(e) => {
-                        const value = Math.min(Math.max(Number(e.target.value) || 0, 1), 99999);
-                        setTunnelForm(prev => ({ ...prev, num: value }));
-                      }}
-                      min="1"
-                      max="99999"
+                      value={tunnelForm.num}
+                      onValueChange={(value) => setTunnelForm(prev => ({ ...prev, num: value }))}
+                      min={1}
+                      max={99999}
                     />
                     
                     <Select
@@ -977,6 +963,7 @@ export default function UserPage() {
                     color="primary"
                     onPress={handleAssignTunnel}
                     isLoading={assignLoading}
+                    isDisabled={!isValidNumber(tunnelForm.flow, 1, 99999) || !isValidNumber(tunnelForm.num, 1, 99999)}
                   >
                     分配权限
                   </Button>
@@ -1114,28 +1101,20 @@ export default function UserPage() {
             {editTunnelForm && (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
+                  <NumberInput
                     label="流量限制(GB)"
-                    type="number"
-                    value={editTunnelForm.flow.toString()}
-                    onChange={(e) => {
-                      const value = Math.min(Math.max(Number(e.target.value) || 0, 1), 99999);
-                      setEditTunnelForm(prev => prev ? { ...prev, flow: value } : null);
-                    }}
-                    min="1"
-                    max="99999"
+                    value={editTunnelForm.flow}
+                    onValueChange={(value) => setEditTunnelForm(prev => prev ? { ...prev, flow: value } : null)}
+                    min={1}
+                    max={99999}
                   />
-                  
-                  <Input
+
+                  <NumberInput
                     label="转发数量"
-                    type="number"
-                    value={editTunnelForm.num.toString()}
-                    onChange={(e) => {
-                      const value = Math.min(Math.max(Number(e.target.value) || 0, 1), 99999);
-                      setEditTunnelForm(prev => prev ? { ...prev, num: value } : null);
-                    }}
-                    min="1"
-                    max="99999"
+                    value={editTunnelForm.num}
+                    onValueChange={(value) => setEditTunnelForm(prev => prev ? { ...prev, num: value } : null)}
+                    min={1}
+                    max={99999}
                   />
                   
                   <Select
@@ -1213,6 +1192,7 @@ export default function UserPage() {
               color="primary"
               onPress={handleUpdateTunnel}
               isLoading={editTunnelLoading}
+              isDisabled={!editTunnelForm || !isValidNumber(editTunnelForm.flow, 1, 99999) || !isValidNumber(editTunnelForm.num, 1, 99999)}
             >
               确定
             </Button>

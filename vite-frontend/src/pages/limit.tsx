@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
+import { NumberInput, isValidNumber } from "@/components/number-input";
 import { Select, SelectItem } from "@heroui/select";
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
 import { Chip } from "@heroui/chip";
@@ -364,12 +365,12 @@ export default function LimitPage() {
                       variant="bordered"
                     />
                     
-                    <Input
+                    <NumberInput
                       label="速度限制"
                       placeholder="请输入速度限制"
-                      type="number"
-                      value={form.speed.toString()}
-                      onChange={(e) => setForm(prev => ({ ...prev, speed: parseInt(e.target.value) || 0 }))}
+                      value={form.speed}
+                      onValueChange={(value) => setForm(prev => ({ ...prev, speed: value }))}
+                      min={1}
                       isInvalid={!!errors.speed}
                       errorMessage={errors.speed}
                       variant="bordered"
@@ -423,6 +424,7 @@ export default function LimitPage() {
                     color="primary" 
                     onPress={handleSubmit}
                     isLoading={submitLoading}
+                    isDisabled={!isValidNumber(form.speed, 1)}
                   >
                     {isEdit ? '保存修改' : '创建规则'}
                   </Button>
