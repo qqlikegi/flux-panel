@@ -300,45 +300,6 @@ func tunnelList(c *Ctx) any {
 	return ok(out)
 }
 
-func tunnelUpdate(c *Ctx) any {
-	var d struct {
-		ID           Num `json:"id"`
-		Name         Str `json:"name"`
-		Flow         Num `json:"flow"`
-		InIP         Str `json:"inIp"`
-		TrafficRatio Num `json:"trafficRatio"`
-	}
-	c.bind(&d)
-	notNull(d.ID, "隧道ID不能为空")
-	notBlank(d.Name, "隧道名称不能为空")
-	notNull(d.Flow, "流量计算类型不能为空")
-	validRatio(d.TrafficRatio)
-	if getTunnel(d.ID.Int()) == nil {
-		return fail("隧道不存在")
-	}
-	inIP := d.InIP.V
-	if !d.InIP.Valid || inIP == "" {
-		var ips []string
-		for _, ct := range entryChains(d.ID.Int()) {
-			n := getNode(ct.NodeID)
-			if n == nil {
-				return fail("隧道节点数据错误，部分节点不存在")
-			}
-			ips = append(ips, n.ServerIP)
-		}
-		inIP = strings.Join(ips, ",")
-	}
-	sets := []string{"name = ?", "flow = ?", "in_ip = ?"}
-	args := []any{d.Name.V, d.Flow.Int(), inIP}
-	if d.TrafficRatio.Valid {
-		sets = append(sets, "traffic_ratio = ?")
-		args = append(args, d.TrafficRatio.V)
-	}
-	args = append(args, d.ID.Int())
-	mustExec("UPDATE tunnel SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...)
-	return ok()
-}
-
 func tunnelDelete(c *Ctx) any {
 	id := c.params().int("id")
 	forwardMu.Lock()

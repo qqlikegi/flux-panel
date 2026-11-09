@@ -41,7 +41,7 @@ curl -L https://raw.githubusercontent.com/qqlikegi/flux-panel/main/panel_install
 ./panel_install.sh install      # 安装（PANEL_PORT=6365 可跳过端口询问）
 ./panel_install.sh update       # 更新到最新 Release
 ./panel_install.sh status       # 查看状态
-./panel_install.sh reset-admin  # 忘记密码时重置为 admin_user / admin_user
+./panel_install.sh reset-admin  # 忘记密码时重置，之后打开面板重新设置管理员账号
 ./panel_install.sh uninstall    # 卸载（可选择保留数据库）
 ```
 
@@ -51,7 +51,7 @@ curl -L https://raw.githubusercontent.com/qqlikegi/flux-panel/main/panel_install
 - 从旧版 Docker 部署升级：安装时会自动检测旧容器和旧数据库，按提示迁移即可，数据库结构完全兼容。
 
 ### 安装节点端
-1. 登录面板，在「网站配置」里把面板地址设置为 `面板公网IP:端口`；
+1. 登录面板，在「系统配置」里把面板地址设置为 `面板公网IP:端口`；
 2. 在「节点管理」新增节点，点击「安装」复制安装命令，到节点服务器上执行即可。
 
 ### 手动运行（不用脚本）
@@ -68,12 +68,18 @@ rm -rf panel/web/dist && cp -r vite-frontend/dist panel/web/dist
 cd panel && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o flux-panel-amd64 .
 ```
 
-#### 默认管理员账号
+#### 管理员账号
 
-- **账号**: admin_user
-- **密码**: admin_user
+全新安装后第一次打开面板，会要求先设置管理员用户名和密码（复杂度不限），确定后直接进入面板。
+从旧版本升级的面板如果还在用默认账号 `admin_user / admin_user`，打开时同样会要求重新设置。
 
-> ⚠️ 首次登录后请立即修改默认密码！
+#### 二开新增功能
+
+- **节点换机自动恢复**：节点换了新机器，点「安装」重装节点端后，隧道、转发、限速自动恢复；改节点 IP / 端口范围后，相关隧道和转发自动迁移端口并实时生效。
+- **隧道可编辑**：已有隧道的入口 / 中间跳 / 出口节点、协议、策略、类型都可以修改，保存后实时下发，隧道下所有用户的转发自动同步。
+- **数据总览**：管理员首页显示在线节点、总使用流量、24 小时流量，以及每个用户的今日 / 本月流量。
+- **云存储备份**：「系统配置」里填写 Cloudflare R2（或任意 S3 兼容存储）的终结点、存储桶和访问密钥，可按每天固定时间或每隔几小时自动备份数据库，最多保留 N 份（默认 3 份），自动删除最旧的。
+- **用户到期时间**：在用户管理里修改用户的到期时间，会同步到该用户的全部隧道；在「用户隧道」里单独编辑则只改那一个隧道。
 
 
 ## 免责声明

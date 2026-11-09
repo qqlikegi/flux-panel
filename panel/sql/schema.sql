@@ -124,3 +124,17 @@ CREATE TABLE IF NOT EXISTS vite_config (
   time INTEGER NOT NULL
 );
 
+
+-- 用户每日流量（数据总览：今日 / 本月流量）
+CREATE TABLE IF NOT EXISTS user_flow_daily (
+  user_id INTEGER NOT NULL,
+  day VARCHAR(10) NOT NULL,
+  flow INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (user_id, day)
+);
+
+-- 系统内部设置（初始化状态、备份配置等），不会通过公开的配置接口返回
+CREATE TABLE IF NOT EXISTS system_setting (
+  name VARCHAR(100) PRIMARY KEY,
+  value TEXT NOT NULL
+);

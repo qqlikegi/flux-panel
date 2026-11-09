@@ -16,6 +16,9 @@ func userLogin(c *Ctx) any {
 	c.bind(&d)
 	notBlank(d.Username, "用户名不能为空")
 	notBlank(d.Password, "密码不能为空")
+	if needSetup() {
+		return fail("系统尚未初始化，请刷新页面后先设置管理员账号")
+	}
 
 	if v, _ := getConfigValue("captcha_enabled"); v == "true" {
 		if d.CaptchaID.Blank() || !captchaSecondaryVerify(d.CaptchaID.V) {
@@ -34,7 +37,7 @@ func userLogin(c *Ctx) any {
 		"token":                 generateToken(u),
 		"name":                  u.User,
 		"role_id":               u.RoleID,
-		"requirePasswordChange": d.Username.V == "admin_user" || d.Password.V == "admin_user",
+		"requirePasswordChange": false, // 首次部署时已由管理员自行设置账号密码
 	})
 }
 
@@ -111,6 +114,10 @@ func userUpdate(c *Ctx) any {
 	}
 	args = append(args, d.ID.Int())
 	mustExec("UPDATE user SET "+strings.Join(sets, ", ")+" WHERE id = ?", args...)
+	// 修改了账号到期时间：同步到该用户已有的全部隧道权限（单独改某个隧道的到期时间请在“用户隧道”里编辑）
+	if d.ExpTime.Int() != u.ExpTime {
+		mustExec("UPDATE user_tunnel SET exp_time = ? WHERE user_id = ?", d.ExpTime.Int(), u.ID)
+	}
 	return ok()
 }
 

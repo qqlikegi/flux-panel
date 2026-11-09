@@ -9,7 +9,8 @@ import { isWebViewFunc } from '@/utils/panel';
 import { siteConfig } from '@/config/site';
 import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
-import { login, LoginData, checkCaptcha } from "@/api";
+import { login, LoginData, checkCaptcha, getSetupStatus } from "@/api";
+import SetupPage from "@/pages/setup";
 import "@/utils/tac.css";
 import "@/utils/tac.min.js";
 import bgImage from "@/images/bg.jpg";
@@ -54,6 +55,13 @@ export default function IndexPage() {
   const tacInstanceRef = useRef<any>(null);
   const captchaContainerRef = useRef<HTMLDivElement>(null);
   const [isWebView, setIsWebView] = useState(false);
+  // 首次部署：还没有设置管理员账号时，先显示初始化页面
+  const [setupState, setSetupState] = useState<'checking' | 'need' | 'done'>('checking');
+  useEffect(() => {
+    getSetupStatus()
+      .then(res => setSetupState(res.code === 0 && res.data?.needSetup ? 'need' : 'done'))
+      .catch(() => setSetupState('done'));
+  }, []);
   // 清理验证码实例
   useEffect(() => {
     return () => {
@@ -75,10 +83,8 @@ export default function IndexPage() {
       newErrors.username = '请输入用户名';
     }
 
-    if (!form.password.trim()) {
+    if (!form.password) {
       newErrors.password = '请输入密码';
-    } else if (form.password.length < 6) {
-      newErrors.password = '密码长度至少6位';
     }
 
 
@@ -250,6 +256,13 @@ export default function IndexPage() {
       handleLogin();
     }
   };
+
+  if (setupState === 'checking') {
+    return <DefaultLayout><div className="min-h-[60vh]" /></DefaultLayout>;
+  }
+  if (setupState === 'need') {
+    return <SetupPage />;
+  }
 
   return (
     <DefaultLayout>

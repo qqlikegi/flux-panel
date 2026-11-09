@@ -12,7 +12,7 @@
 #    ./panel_install.sh uninstall    卸载
 #    ./panel_install.sh status       查看状态
 #
-#    ./panel_install.sh reset-admin  重置管理员账号密码为 admin_user / admin_user
+#    ./panel_install.sh reset-admin  重置管理员账号（重置后打开面板重新设置用户名和密码）
 #
 #  离线安装：PANEL_BINARY=/path/to/flux-panel-amd64 ./panel_install.sh install
 #  非交互指定端口：PANEL_PORT=6365 ./panel_install.sh install
@@ -276,8 +276,8 @@ install_panel() {
     echo ""
     echo "🎉 面板安装完成"
     echo "🌐 访问地址: http://${ip}:${port}"
-    echo "👤 默认管理员: admin_user / admin_user（首次登录后请立即修改密码）"
-    echo "📌 添加节点前，请在“网站配置”里把面板地址设为 ${ip}:${port}"
+    echo "👤 首次打开面板时会要求设置管理员用户名和密码"
+    echo "📌 添加节点前，请在“系统配置”里把面板地址设为 ${ip}:${port}"
     echo "📁 安装目录: ${INSTALL_DIR}    配置文件: ${ENV_FILE}"
     echo "📜 查看日志: journalctl -u ${SERVICE_NAME} -f"
   else
@@ -330,7 +330,7 @@ reset_admin() {
     echo "❌ 面板未安装"
     return 1
   fi
-  read -p "确认把管理员账号密码重置为 admin_user / admin_user 吗？(y/N): " confirm
+  read -p "确认重置管理员账号吗？重置后打开面板重新设置管理员用户名和密码 (y/N): " confirm
   if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     echo "❌ 已取消"
     return 0

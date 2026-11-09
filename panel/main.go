@@ -42,7 +42,7 @@ func env(key, def string) string {
 
 func main() {
 	showVersion := flag.Bool("v", false, "显示版本")
-	resetAdmin := flag.Bool("reset-admin", false, "把管理员账号重置为 admin_user / admin_user")
+	resetAdmin := flag.Bool("reset-admin", false, "重置管理员账号：重置后打开面板重新设置管理员用户名和密码")
 	flag.Parse()
 	if *showVersion {
 		fmt.Println("flux-panel", version)
@@ -67,7 +67,7 @@ func main() {
 		if err := resetAdminAccount(); err != nil {
 			log.Fatalf("重置管理员失败: %v", err)
 		}
-		fmt.Println("管理员账号已重置为 admin_user / admin_user，请登录后立即修改密码")
+		fmt.Println("管理员账号已重置，请打开面板重新设置管理员用户名和密码")
 		return
 	}
 
@@ -75,7 +75,10 @@ func main() {
 		cfg.JWTSecret = loadOrCreateSecret(filepath.Join(filepath.Dir(cfg.DBPath), "jwt.secret"))
 	}
 
+	initSetupState()
+	backfillDailyFlow()
 	startTasks()
+	go backupScheduler()
 
 	srv := &http.Server{
 		Addr:              ":" + cfg.Port,

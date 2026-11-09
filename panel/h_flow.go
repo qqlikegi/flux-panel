@@ -191,6 +191,7 @@ func runTask(name string, fn func()) {
 func statisticsFlow() {
 	now := time.Now()
 	hour := now.Truncate(time.Hour).Format("15:04")
+	day := now.Add(-time.Minute).Format("2006-01-02")
 	ms := now.UnixMilli()
 	mustExec("DELETE FROM statistics_flow WHERE created_time < ?", ms-48*3600*1000)
 	users, err := queryList(scanUser, "SELECT "+userCols+" FROM user")
@@ -206,7 +207,13 @@ func statisticsFlow() {
 			}
 		}
 		mustExec("INSERT INTO statistics_flow (user_id, flow, total_flow, time, created_time) VALUES (?, ?, ?, ?, ?)", u.ID, inc, total, hour, ms)
+		// 整点统计的是上一个小时的流量，计入上一小时所在的日期
+		if inc > 0 {
+			mustExec(`INSERT INTO user_flow_daily (user_id, day, flow) VALUES (?, ?, ?)
+				ON CONFLICT(user_id, day) DO UPDATE SET flow = flow + excluded.flow`, u.ID, day, inc)
+		}
 	}
+	mustExec("DELETE FROM user_flow_daily WHERE day < ?", now.AddDate(0, 0, -400).Format("2006-01-02"))
 }
 
 func resetFlowTask() {

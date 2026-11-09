@@ -85,4 +85,14 @@ html, body {
   }
 }
 
-@config "../../tailwind.config.js"
+@config "../../tailwind.config.js";
+
+/* 图表点击后不显示焦点黑框（悬停 / 触摸移动时照常显示数值） */
+.recharts-wrapper,
+.recharts-wrapper *,
+.recharts-surface,
+.recharts-surface:focus,
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus {
+  outline: none !important;
+}

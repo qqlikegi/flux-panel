@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 
 import { getUserPackageInfo } from "@/api";
+import AdminOverview from "@/pages/admin-overview";
 
 interface UserInfo {
   flow: number;
@@ -57,7 +58,12 @@ interface StatisticsFlow {
   time: string;
 }
 
+// 管理员看数据总览，普通用户保持原来的首页
 export default function DashboardPage() {
+  return localStorage.getItem('admin') === 'true' ? <AdminOverview /> : <UserDashboard />;
+}
+
+function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [userInfo, setUserInfo] = useState<UserInfo>({} as UserInfo);
   const [userTunnels, setUserTunnels] = useState<UserTunnel[]>([]);
@@ -733,7 +739,7 @@ export default function DashboardPage() {
                                     {/* 流量趋势图 */}
                    <div className="h-64 lg:h-80 w-full">
                      <ResponsiveContainer width="100%" height="100%">
-                       <LineChart data={processFlowChartData()}>
+                       <LineChart data={processFlowChartData()} accessibilityLayer={false}>
                          <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                          <XAxis 
                            dataKey="time" 

@@ -820,6 +820,7 @@ export default function UserPage() {
                 isRequired
                 showMonthAndYearPickers
                 className="cursor-pointer"
+                description={isEdit ? "修改后会同步为该用户全部隧道的到期时间" : undefined}
               />
             </div>
             
@@ -1169,6 +1170,7 @@ export default function UserPage() {
                     showMonthAndYearPickers
                     className="cursor-pointer"
                     isRequired
+                    description="只修改这个隧道的到期时间"
                   />
                 </div>
                 

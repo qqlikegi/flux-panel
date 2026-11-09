@@ -45,8 +45,6 @@ export default function ChangePasswordPage() {
 
     if (!form.newPassword.trim()) {
       newErrors.newPassword = '请输入新密码';
-    } else if (form.newPassword.length < 6) {
-      newErrors.newPassword = '新密码长度不能少于6位';
     } else if (form.newPassword.length > 20) {
       newErrors.newPassword = '新密码长度不能超过20位';
     }
@@ -152,7 +150,7 @@ export default function ChangePasswordPage() {
                 
                 <Input
                   label="新密码"
-                  placeholder="请输入新密码（至少6位）"
+                  placeholder="请输入新密码"
                   type="password"
                   value={form.newPassword}
                   onChange={(e) => handleInputChange('newPassword', e.target.value)}

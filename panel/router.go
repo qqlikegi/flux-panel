@@ -204,7 +204,18 @@ func newRouter() http.Handler {
 		"POST /api/v1/speed-limit/update":  admin(speedUpdate),
 		"POST /api/v1/speed-limit/delete":  admin(speedDelete),
 		"POST /api/v1/speed-limit/tunnels": admin(tunnelList),
-		// 网站配置
+		// 首次部署设置管理员
+		"POST /api/v1/setup/status": public(setupStatus),
+		"POST /api/v1/setup/init":   public(setupInit),
+		// 数据总览
+		"POST /api/v1/dashboard/overview": admin(dashboardOverview),
+		// 云存储备份
+		"POST /api/v1/backup/get":  admin(backupGet),
+		"POST /api/v1/backup/save": admin(backupSave),
+		"POST /api/v1/backup/test": admin(backupTest),
+		"POST /api/v1/backup/run":  admin(backupRun),
+		"POST /api/v1/backup/list": admin(backupList),
+		// 系统配置
 		"POST /api/v1/config/list":          user(configList),
 		"POST /api/v1/config/get":           public(configGet),
 		"POST /api/v1/config/update":        admin(configUpdate),

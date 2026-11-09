@@ -10,6 +10,7 @@ import { Select, SelectItem } from "@heroui/select";
 import toast from 'react-hot-toast';
 import { updateConfigs } from '@/api';
 import { SettingsIcon } from '@/components/icons';
+import BackupSettings from '@/components/backup-settings';
 
 import { isAdmin } from '@/utils/auth';
 import { getCachedConfigs, clearConfigCache, updateSiteConfig } from '@/config/site';
@@ -340,9 +341,9 @@ export default function ConfigPage() {
         <div className="flex items-center gap-3 mb-6">
           <SettingsIcon className="w-8 h-8 text-primary" />
           <div>
-            <h1 className="text-2xl font-bold">网站配置</h1>
+            <h1 className="text-2xl font-bold">系统配置</h1>
             <p className="text-gray-600 dark:text-gray-400">
-              管理网站的基本信息和显示设置
+              管理网站的基本信息、显示设置和数据备份
             </p>
           </div>
         </div>
@@ -423,6 +424,9 @@ export default function ConfigPage() {
             </CardBody>
           </Card>
         )}
+
+        {/* 云存储备份 */}
+        <BackupSettings />
       </div>
     
   );

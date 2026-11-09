@@ -81,7 +81,11 @@ func closeDB() {
 }
 
 func resetAdminAccount() error {
-	_, err := db.Exec("UPDATE user SET user = 'admin_user', pwd = ?, status = 1, updated_time = ? WHERE role_id = 0", md5Hex("admin_user"), nowMs())
+	if _, err := db.Exec("UPDATE user SET user = 'admin_user', pwd = ?, status = 1, updated_time = ? WHERE role_id = 0", md5Hex("admin_user"), nowMs()); err != nil {
+		return err
+	}
+	// 重置后重新进入首次设置流程：打开面板时设置新的管理员用户名和密码
+	_, err := db.Exec("DELETE FROM system_setting WHERE name = ?", setupDoneKey)
 	return err
 }
 

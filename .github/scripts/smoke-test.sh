@@ -24,6 +24,12 @@ curl -fs "http://127.0.0.1:${PORT}/dashboard" | grep -qi '<div id="root"' || fai
 code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/assets/not-exist.js")
 [[ "$code" == "404" ]] || fail "缺失的静态文件应返回 404，实际 $code"
 
+step "首次部署设置管理员"
+[[ "$(curl -fs -X POST "$API/setup/status" | jq -r .data.needSetup)" == "true" ]] || fail "全新安装应进入初始化流程"
+curl -fs -X POST "$API/setup/init" -H 'Content-Type: application/json' \
+  -d '{"username":"admin_user","password":"admin_user"}' | jq -e '.code == 0' >/dev/null || fail "设置管理员失败"
+[[ "$(curl -fs -X POST "$API/setup/status" | jq -r .data.needSetup)" == "false" ]] || fail "初始化后状态未更新"
+
 step "登录"
 TOKEN=$(curl -fs -X POST "$API/user/login" -H 'Content-Type: application/json' \
   -d '{"username":"admin_user","password":"admin_user"}' | jq -r '.data.token')

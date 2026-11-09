@@ -89,3 +89,16 @@ export const updateConfig = (name: string, value: string) => Network.post("/conf
 export const checkCaptcha = () => Network.post("/captcha/check");
 export const generateCaptcha = () => Network.post(`/captcha/generate`);
 export const verifyCaptcha = (data: { captchaId: string; trackData: string }) => Network.post("/captcha/verify", data); 
+// 首次部署：设置管理员账号
+export const getSetupStatus = () => Network.post<{ needSetup: boolean }>("/setup/status");
+export const initSetup = (data: { username: string; password: string }) => Network.post<LoginResponse>("/setup/init", data);
+
+// 数据总览（管理员首页）
+export const getDashboardOverview = () => Network.post("/dashboard/overview");
+
+// 云存储备份（Cloudflare R2 / S3 兼容）
+export const getBackupConfig = () => Network.post("/backup/get");
+export const saveBackupConfig = (data: any) => Network.post("/backup/save", data);
+export const testBackupConfig = (data: any) => Network.post("/backup/test", data);
+export const runBackupNow = () => Network.post("/backup/run");
+export const listBackups = () => Network.post("/backup/list");
