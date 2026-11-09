@@ -247,6 +247,12 @@ func (w *WebSocketReporter) connect() error {
 	})
 
 	fmt.Printf("✅ WebSocket连接建立成功 (http=%d, tls=%d, socks=%d)\n", cfg.Http, cfg.Tls, cfg.Socks)
+	// 每次连上面板都上报一次当前配置，面板据此对账：换机器重装、配置丢失、
+	// 离线期间面板有改动时，节点一连上就自动恢复（不必等 10 分钟一次的定时上报）
+	go func() {
+		time.Sleep(3 * time.Second)
+		service.ReportConfigNow()
+	}()
 	return nil
 }
 

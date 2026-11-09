@@ -36,14 +36,13 @@ func gostDeleteLimiter(nodeID, name int64) *GostResult {
 	return okIf(sendMsg(nodeID, map[string]any{"limiter": strconv.FormatInt(name, 10)}, "DeleteLimiters"), "not found")
 }
 
-// gostAddChains 在 nodeID 上创建转发链，指向下一跳的节点列表
-func gostAddChains(nodeID int64, next []*ChainTunnel, nodes map[int64]*Node) *GostResult {
+// chainData 节点 nodeID 上的转发链配置，指向下一跳的节点列表
+func chainData(nodeID int64, next []*ChainTunnel, nodes map[int64]*Node) map[string]any {
 	hopNodes := []any{}
 	for _, ct := range next {
 		n := nodes[ct.NodeID]
 		hopNodes = append(hopNodes, map[string]any{
-			"name": fmt.Sprintf("node_%d", ct.NodeID), // 同一跳内节点名唯一
-
+			"name":      fmt.Sprintf("node_%d", ct.NodeID), // 同一跳内节点名唯一
 			"addr":      processServerAddress(fmt.Sprintf("%s:%d", n.ServerIP, ct.port())),
 			"connector": map[string]any{"type": "relay"},
 			"dialer":    map[string]any{"type": strOr(ct.Protocol, "")},
@@ -62,16 +61,20 @@ func gostAddChains(nodeID int64, next []*ChainTunnel, nodes map[int64]*Node) *Go
 	if self := nodes[nodeID]; self != nil && self.iface() != "" {
 		hop["interface"] = self.iface()
 	}
-	data := map[string]any{"name": fmt.Sprintf("chains_%d", first.TunnelID), "hops": []any{hop}}
-	return okIf(sendMsg(nodeID, data, "AddChains"), "exists")
+	return map[string]any{"name": fmt.Sprintf("chains_%d", first.TunnelID), "hops": []any{hop}}
+}
+
+// gostAddChains 在 nodeID 上创建转发链，指向下一跳的节点列表
+func gostAddChains(nodeID int64, next []*ChainTunnel, nodes map[int64]*Node) *GostResult {
+	return okIf(sendMsg(nodeID, chainData(nodeID, next, nodes), "AddChains"), "exists")
 }
 
 func gostDeleteChains(nodeID int64, name string) *GostResult {
 	return okIf(sendMsg(nodeID, map[string]any{"chain": name}, "DeleteChains"), "not found")
 }
 
-// gostAddChainService 中间跳 / 出口节点上的隧道监听服务
-func gostAddChainService(nodeID int64, ct *ChainTunnel, nodes map[int64]*Node) *GostResult {
+// chainServiceData 中间跳 / 出口节点上的隧道监听服务配置
+func chainServiceData(nodeID int64, ct *ChainTunnel, nodes map[int64]*Node) map[string]any {
 	n := nodes[ct.NodeID]
 	svc := map[string]any{
 		"name":     fmt.Sprintf("%d_tls", ct.TunnelID),
@@ -86,12 +89,16 @@ func gostAddChainService(nodeID int64, ct *ChainTunnel, nodes map[int64]*Node) *
 		h["chain"] = fmt.Sprintf("chains_%d", ct.TunnelID)
 	}
 	svc["handler"] = h
-	return okIf(sendMsg(nodeID, []any{svc}, "AddService"), "exists")
+	return svc
 }
 
-// gostAddOrUpdateService 入口节点上的转发服务（tcp + udp），method 为 AddService / UpdateService
-func gostAddOrUpdateService(name string, limiter *int64, node *Node, f *Forward, port int64, tunnel *Tunnel, method string) *GostResult {
-	services := []any{}
+func gostAddChainService(nodeID int64, ct *ChainTunnel, nodes map[int64]*Node) *GostResult {
+	return okIf(sendMsg(nodeID, []any{chainServiceData(nodeID, ct, nodes)}, "AddService"), "exists")
+}
+
+// forwardServicesData 入口节点上的转发服务配置（tcp + udp 两个服务）
+func forwardServicesData(name string, limiter *int64, node *Node, f *Forward, port int64, tunnel *Tunnel) []map[string]any {
+	var services []map[string]any
 	for _, proto := range []string{"tcp", "udp"} {
 		listenAddr := node.TCPListenAddr
 		if proto == "udp" {
@@ -120,7 +127,12 @@ func gostAddOrUpdateService(name string, limiter *int64, node *Node, f *Forward,
 		svc["forwarder"] = forwarderData(f.RemoteAddr, f.Strategy)
 		services = append(services, svc)
 	}
-	return okIf(sendMsg(node.ID, services, method), "exists")
+	return services
+}
+
+// gostAddOrUpdateService 入口节点上的转发服务（tcp + udp），method 为 AddService / UpdateService
+func gostAddOrUpdateService(name string, limiter *int64, node *Node, f *Forward, port int64, tunnel *Tunnel, method string) *GostResult {
+	return okIf(sendMsg(node.ID, forwardServicesData(name, limiter, node, f, port, tunnel), method), "exists")
 }
 
 func forwarderData(remoteAddr, strategy string) map[string]any {

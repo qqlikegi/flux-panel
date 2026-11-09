@@ -189,6 +189,18 @@ func sendConfigReport(ctx context.Context) (bool, error) {
 	}
 }
 
+// ReportConfigNow 立即上报一次当前配置（连上面板时调用）
+func ReportConfigNow() {
+	if configReportURL == "" {
+		return
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	if _, err := sendConfigReport(ctx); err != nil {
+		fmt.Printf("❌ 配置上报失败: %v\n", err)
+	}
+}
+
 // StartConfigReporter 启动配置定时上报器（每10分钟上报一次）
 func StartConfigReporter(ctx context.Context) {
 	if configReportURL == "" {

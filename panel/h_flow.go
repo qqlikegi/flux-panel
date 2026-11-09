@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -124,78 +123,26 @@ func pauseForwards(list []*Forward) {
 	}
 }
 
-// flowConfig 节点上报当前配置，清理面板中已不存在的服务/转发链/限速器
+// flowConfig 节点上报当前配置（启动时、每次连上面板、之后每 10 分钟），按数据库对账：
+// 缺的补上、不一致的更新、多余的删除、暂停状态纠正。换新机器重装后会自动恢复全部隧道和转发。
 func flowConfig(c *Ctx) any {
 	secret := c.Req.URL.Query().Get("secret")
 	node := nodeBySecret(secret)
 	if node == nil {
 		return text("ok")
 	}
-	var cfgDto struct {
-		Limiters []struct{ Name string } `json:"limiters"`
-		Chains   []struct{ Name string } `json:"chains"`
-		Services []struct{ Name string } `json:"services"`
-	}
-	if err := json.Unmarshal(decryptIfNeeded(c.Body, secret), &cfgDto); err != nil {
+	actual, err := stateFromReport(decryptIfNeeded(c.Body, secret))
+	if err != nil {
 		log.Printf("处理节点 %d 配置数据失败: %v", node.ID, err)
 		return text("ok")
 	}
 	go func() {
-		safe := func(desc string, fn func()) {
-			defer func() {
-				if e := recover(); e != nil {
-					log.Printf("%s 失败: %v", desc, e)
-				}
-			}()
-			fn()
-		}
-		for _, s := range cfgDto.Services {
-			name := s.Name
-			safe("清理服务 "+name, func() {
-				if name == "web_api" {
-					return
-				}
-				parts := strings.Split(name, "_")
-				id, err := strconv.ParseInt(parts[0], 10, 64)
-				if err != nil {
-					return
-				}
-				switch parts[len(parts)-1] {
-				case "tls":
-					if getTunnel(id) == nil {
-						gostDeleteService(node.ID, []string{fmt.Sprintf("%d_tls", id)})
-						log.Printf("删除孤立的服务: %s (节点: %d)", name, node.ID)
-					}
-				case "tcp":
-					if len(parts) >= 4 && getForward(id) == nil {
-						base := strings.Join(parts[:3], "_")
-						gostDeleteService(node.ID, forwardServiceNames(base))
-						log.Printf("删除孤立的服务: %s (节点: %d)", name, node.ID)
-					}
-				}
-			})
-		}
-		for _, ch := range cfgDto.Chains {
-			name := ch.Name
-			safe("清理链 "+name, func() {
-				parts := strings.Split(name, "_")
-				id, err := strconv.ParseInt(parts[len(parts)-1], 10, 64)
-				if err == nil && getTunnel(id) == nil {
-					gostDeleteChains(node.ID, name)
-					log.Printf("删除孤立的链: %s (节点: %d)", name, node.ID)
-				}
-			})
-		}
-		for _, l := range cfgDto.Limiters {
-			name := l.Name
-			safe("清理限流器 "+name, func() {
-				id, err := strconv.ParseInt(name, 10, 64)
-				if err == nil && getSpeedLimit(id) == nil {
-					gostDeleteLimiter(node.ID, id)
-					log.Printf("删除孤立的限流器: %s (节点: %d)", name, node.ID)
-				}
-			})
-		}
+		defer func() {
+			if e := recover(); e != nil {
+				log.Printf("节点 %d 配置对账异常: %v", node.ID, e)
+			}
+		}()
+		reconcileNode(node.ID, actual)
 	}()
 	return text("ok")
 }

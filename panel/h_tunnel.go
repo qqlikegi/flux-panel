@@ -77,6 +77,8 @@ func tunnelCreate(c *Ctx) any {
 		TrafficRatio Num           `json:"trafficRatio"`
 	}
 	c.bind(&d)
+	forwardMu.Lock()
+	defer forwardMu.Unlock()
 	notBlank(d.Name, "隧道名称不能为空")
 	if d.InNodeID == nil {
 		panic(validErr("入口节点不能为空"))
@@ -339,6 +341,8 @@ func tunnelUpdate(c *Ctx) any {
 
 func tunnelDelete(c *Ctx) any {
 	id := c.params().int("id")
+	forwardMu.Lock()
+	defer forwardMu.Unlock()
 	if getTunnel(id) == nil {
 		return fail("隧道不存在")
 	}
@@ -593,6 +597,8 @@ func userTunnelList(c *Ctx) any {
 
 func userTunnelRemove(c *Ctx) any {
 	id := c.params().int("id")
+	forwardMu.Lock()
+	defer forwardMu.Unlock()
 	ut := getUserTunnelByID(id)
 	if ut == nil {
 		return fail("未找到对应的用户隧道权限记录")
