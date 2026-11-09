@@ -56,7 +56,9 @@ public class TunnelServiceImpl extends ServiceImpl<TunnelMapper, Tunnel> impleme
 
         int count = this.count(new QueryWrapper<Tunnel>().eq("name", tunnelDto.getName()));
         if (count > 0) return R.err("隧道名称重复");
-        if (tunnelDto.getType() == 2 && tunnelDto.getOutNodeId() == null) return R.err("出口不能为空");
+        if (tunnelDto.getInNodeId() == null || tunnelDto.getInNodeId().isEmpty()) return R.err("入口不能为空");
+        if (tunnelDto.getType() == 2 && (tunnelDto.getOutNodeId() == null || tunnelDto.getOutNodeId().isEmpty())) return R.err("出口不能为空");
+        if (tunnelDto.getChainNodes() == null) tunnelDto.setChainNodes(new ArrayList<>());
 
 
         List<ChainTunnel> chainTunnels = new ArrayList<>();
@@ -132,119 +134,53 @@ public class TunnelServiceImpl extends ServiceImpl<TunnelMapper, Tunnel> impleme
         }
         chainTunnelService.saveBatch(chainTunnels);
 
-        List<JSONObject> chain_success = new ArrayList<>();
-        List<JSONObject> service_success = new ArrayList<>();
-
-
+        // 记录已在节点上创建成功的 chain / service，任何一步失败都整体回滚
+        List<Long> chainSuccess = new ArrayList<>();
+        List<Long> serviceSuccess = new ArrayList<>();
 
         if (tunnel.getType() == 2) {
+            List<List<ChainTunnel>> chainNodes = tunnelDto.getChainNodes();
 
+            // 1. 入口节点：创建 Chain，指向第一跳；没有中间跳时直接指向出口
             for (ChainTunnel in_node : tunnelDto.getInNodeId()) {
-                // 创建Chain， 指向chainNode的第一跳。如果chainNode为空就是指向出口
-                if (tunnelDto.getChainNodes().isEmpty()) { // 指向出口
-                    GostDto gostDto = GostUtil.AddChains(in_node.getNodeId(), tunnelDto.getOutNodeId(), nodes);
-                    isError(gostDto);
+                List<ChainTunnel> next = chainNodes.isEmpty() ? tunnelDto.getOutNodeId() : chainNodes.getFirst();
+                GostDto gostDto = GostUtil.AddChains(in_node.getNodeId(), next, nodes);
+                if (!isOk(gostDto)) {
+                    rollbackCreateTunnel(tunnel.getId(), chainSuccess, serviceSuccess);
+                    return R.err(gostDto == null ? "节点无响应" : gostDto.getMsg());
+                }
+                chainSuccess.add(in_node.getNodeId());
+            }
 
-                } else {
-                    GostDto gostDto = GostUtil.AddChains(in_node.getNodeId(), tunnelDto.getChainNodes().getFirst(), nodes);// 指向第一跳
-                    if (Objects.equals(gostDto.getMsg(), "OK")){
-                        JSONObject data = new JSONObject();
-                        data.put("node_id", in_node.getNodeId());
-                        data.put("name", "chains_" + tunnel.getId());
-                        chain_success.add(data);
-                    }else {
-                        this.removeById(tunnel.getId());
-                        chainTunnelService.remove(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnel.getId()));
-                        for (JSONObject chainSuccess : chain_success) {
-                            GostDto deleteChains = GostUtil.DeleteChains(chainSuccess.getLong("node_id"), chainSuccess.getString("name"));
-                            System.out.println(deleteChains);
-                        }
-                        return R.err(gostDto.getMsg());
+            // 2. 中间跳：每个节点创建 Chain（指向下一跳，最后一跳指向出口）和监听 Service
+            for (int i = 0; i < chainNodes.size(); i++) {
+                List<ChainTunnel> next = (i + 1 >= chainNodes.size()) ? tunnelDto.getOutNodeId() : chainNodes.get(i + 1);
+                for (ChainTunnel chainTunnel : chainNodes.get(i)) {
+                    GostDto gostDto = GostUtil.AddChains(chainTunnel.getNodeId(), next, nodes);
+                    if (!isOk(gostDto)) {
+                        rollbackCreateTunnel(tunnel.getId(), chainSuccess, serviceSuccess);
+                        return R.err(gostDto == null ? "节点无响应" : gostDto.getMsg());
                     }
+                    chainSuccess.add(chainTunnel.getNodeId());
+
+                    gostDto = GostUtil.AddChainService(chainTunnel.getNodeId(), chainTunnel, nodes);
+                    if (!isOk(gostDto)) {
+                        rollbackCreateTunnel(tunnel.getId(), chainSuccess, serviceSuccess);
+                        return R.err(gostDto == null ? "节点无响应" : gostDto.getMsg());
+                    }
+                    serviceSuccess.add(chainTunnel.getNodeId());
                 }
             }
 
-            for (int i = 0; i < tunnelDto.getChainNodes().size(); i++) {
-                //  创建Chain和Service。每一条的Chain都是指向下一跳。最后一跳指向出口， Service是监听端口
-                List<ChainTunnel> chainTunnels1 = tunnelDto.getChainNodes().get(i);
-                for (ChainTunnel chainTunnel : chainTunnels1) {
-                    int inx = i+1;
-                    if (inx >= tunnelDto.getChainNodes().size()) { // 指向出口
-                        GostDto gostDto = GostUtil.AddChains(chainTunnel.getNodeId(), tunnelDto.getOutNodeId(), nodes);
-                        if (Objects.equals(gostDto.getMsg(), "OK")){
-                            JSONObject data = new JSONObject();
-                            data.put("node_id", chainTunnel.getNodeId());
-                            data.put("name", "chains_" + tunnel.getId());
-                            chain_success.add(data);
-                        }else {
-                            this.removeById(tunnel.getId());
-                            chainTunnelService.remove(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnel.getId()));
-                            for (JSONObject chainSuccess : chain_success) {
-                                GostDto deleteChains = GostUtil.DeleteChains(chainSuccess.getLong("node_id"), chainSuccess.getString("name"));
-                                System.out.println(deleteChains);
-                            }
-                            return R.err(gostDto.getMsg());
-                        }
-                    } else {
-                        GostDto gostDto = GostUtil.AddChains(chainTunnel.getNodeId(), tunnelDto.getChainNodes().get(inx), nodes);
-                        if (Objects.equals(gostDto.getMsg(), "OK")){
-                            JSONObject data = new JSONObject();
-                            data.put("node_id", chainTunnel.getNodeId());
-                            data.put("name", "chains_" + tunnel.getId());
-                            chain_success.add(data);
-                        }else {
-                            this.removeById(tunnel.getId());
-                            chainTunnelService.remove(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnel.getId()));
-                            for (JSONObject chainSuccess : chain_success) {
-                                GostDto deleteChains = GostUtil.DeleteChains(chainSuccess.getLong("node_id"), chainSuccess.getString("name"));
-                                System.out.println(deleteChains);
-                            }
-                            return R.err(gostDto.getMsg());
-                        }
-                    }
-
-                    GostDto gostDto = GostUtil.AddChainService(chainTunnel.getNodeId(), chainTunnel, nodes);
-                    if (Objects.equals(gostDto.getMsg(), "OK")){
-                        JSONObject data = new JSONObject();
-                        data.put("node_id", chainTunnel.getNodeId());
-                        data.put("name", tunnel.getId() + "_tls");
-                        service_success.add(data);
-                    }else {
-                        this.removeById(tunnel.getId());
-                        chainTunnelService.remove(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnel.getId()));
-                        for (JSONObject serviceSuccess : service_success) {
-                            JSONArray jsonArray = new JSONArray();
-                            jsonArray.add(serviceSuccess.getString("name"));
-                            GostDto deleteService = GostUtil.DeleteService(serviceSuccess.getLong("node_id"), jsonArray);
-                            System.out.println(deleteService);
-                        }
-                        return R.err(gostDto.getMsg());
-                    }
-                }
-
-            }
-
-
+            // 3. 出口节点：创建监听 Service
             for (ChainTunnel out_node : tunnelDto.getOutNodeId()) {
                 GostDto gostDto = GostUtil.AddChainService(out_node.getNodeId(), out_node, nodes);
-                if (Objects.equals(gostDto.getMsg(), "OK")){
-                    JSONObject data = new JSONObject();
-                    data.put("node_id", out_node.getNodeId());
-                    data.put("name", tunnel.getId() + "_tls");
-                    service_success.add(data);
-                }else {
-                    this.removeById(tunnel.getId());
-                    chainTunnelService.remove(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnel.getId()));
-                    for (JSONObject serviceSuccess : service_success) {
-                        JSONArray jsonArray = new JSONArray();
-                        jsonArray.add(serviceSuccess.getString("name"));
-                        GostDto deleteService = GostUtil.DeleteService(serviceSuccess.getLong("node_id"), jsonArray);
-                        System.out.println(deleteService);
-                    }
-                    return R.err(gostDto.getMsg());
+                if (!isOk(gostDto)) {
+                    rollbackCreateTunnel(tunnel.getId(), chainSuccess, serviceSuccess);
+                    return R.err(gostDto == null ? "节点无响应" : gostDto.getMsg());
                 }
+                serviceSuccess.add(out_node.getNodeId());
             }
-
         }
         return R.ok();
     }
@@ -607,8 +543,24 @@ public class TunnelServiceImpl extends ServiceImpl<TunnelMapper, Tunnel> impleme
         return set.stream().sorted().collect(Collectors.toList());
     }
 
-    private void isError(GostDto gostDto){
+    private boolean isOk(GostDto gostDto) {
+        return gostDto != null && Objects.equals(gostDto.getMsg(), "OK");
+    }
 
+    /**
+     * 创建隧道失败时的整体回滚：删除数据库记录，并删除已经下发到各节点的 chain 与 service
+     */
+    private void rollbackCreateTunnel(Long tunnelId, List<Long> chainNodeIds, List<Long> serviceNodeIds) {
+        for (Long nodeId : chainNodeIds) {
+            GostUtil.DeleteChains(nodeId, "chains_" + tunnelId);
+        }
+        for (Long nodeId : serviceNodeIds) {
+            JSONArray services = new JSONArray();
+            services.add(tunnelId + "_tls");
+            GostUtil.DeleteService(nodeId, services);
+        }
+        chainTunnelService.remove(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnelId));
+        this.removeById(tunnelId);
     }
 
     private DiagnosisResult performTcpPingDiagnosis(Node node, String targetIp, int port, String description) {

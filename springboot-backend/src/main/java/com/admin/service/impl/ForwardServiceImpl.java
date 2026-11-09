@@ -167,45 +167,67 @@ public class ForwardServiceImpl extends ServiceImpl<ForwardMapper, Forward> impl
         forward.setUserName(currentUser.getUserName());
         forward.setCreatedTime(System.currentTimeMillis());
         forward.setUpdatedTime(System.currentTimeMillis());
-        List<JSONObject> success = new ArrayList<>();
         List<ChainTunnel> chainTunnels = chainTunnelService.list(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnel.getId()).eq("chain_type", 1));
+        if (chainTunnels.isEmpty()) {
+            return R.err("隧道没有入口节点");
+        }
         chainTunnels = get_port(chainTunnels, forwardDto.getInPort(), 0L);
-        this.save(forward);
 
+        // 先校验所有入口节点都存在，避免写库后再中途失败
+        Map<Long, Node> nodeMap = new HashMap<>();
         for (ChainTunnel chainTunnel : chainTunnels) {
-
-            ForwardPort forwardPort = new ForwardPort();
-            forwardPort.setForwardId(forward.getId());
-            forwardPort.setNodeId(chainTunnel.getNodeId());
-            forwardPort.setPort(chainTunnel.getPort());
-            forwardPortService.save(forwardPort);
-            String serviceName = buildServiceName(forward.getId(), forward.getUserId(), permissionResult.getUserTunnel());
-            Integer limiter = permissionResult.getLimiter();
-
             Node node = nodeService.getById(chainTunnel.getNodeId());
             if (node == null) {
                 return R.err("部分节点不存在");
             }
-            GostDto gostDto = GostUtil.AddAndUpdateService(serviceName, limiter, node, forward, forwardPort, tunnel, "AddService");
-            if (Objects.equals(gostDto.getMsg(), "OK")) {
-                JSONObject data = new JSONObject();
-                data.put("node_id", node.getId());
-                data.put("name", serviceName);
-                success.add(data);
-            } else {
-                this.removeById(forward.getId());
-                forwardPortService.remove(new QueryWrapper<ForwardPort>().eq("forward_id", forward.getId()));
-                for (JSONObject jsonObject : success) {
-                    JSONArray se = new JSONArray();
-                    se.add(jsonObject.getString("name") + "_tcp");
-                    se.add(jsonObject.getString("name") + "_udp");
-                    GostUtil.DeleteService(jsonObject.getLong("node_id"), se);
-                    return R.err(gostDto.getMsg());
-                }
-            }
+            nodeMap.put(node.getId(), node);
+        }
 
+        this.save(forward);
+        String serviceName = buildServiceName(forward.getId(), forward.getUserId(), permissionResult.getUserTunnel());
+        Integer limiter = permissionResult.getLimiter();
+
+        // 记录已下发成功的节点；任意节点失败都整体回滚并返回错误
+        List<Long> successNodeIds = new ArrayList<>();
+        for (ChainTunnel chainTunnel : chainTunnels) {
+            Node node = nodeMap.get(chainTunnel.getNodeId());
+
+            ForwardPort forwardPort = new ForwardPort();
+            forwardPort.setForwardId(forward.getId());
+            forwardPort.setNodeId(node.getId());
+            forwardPort.setPort(chainTunnel.getPort());
+            forwardPortService.save(forwardPort);
+
+            GostDto gostDto = GostUtil.AddAndUpdateService(serviceName, limiter, node, forward, forwardPort, tunnel, "AddService");
+            if (!isGostOk(gostDto)) {
+                rollbackCreateForward(forward.getId(), serviceName, successNodeIds);
+                return R.err(gostDto == null ? "节点无响应" : gostDto.getMsg());
+            }
+            successNodeIds.add(node.getId());
         }
         return R.ok();
+    }
+
+    private boolean isGostOk(GostDto gostDto) {
+        return gostDto != null && Objects.equals(gostDto.getMsg(), "OK");
+    }
+
+    private JSONArray forwardServiceNames(String serviceName) {
+        JSONArray services = new JSONArray();
+        services.add(serviceName + "_tcp");
+        services.add(serviceName + "_udp");
+        return services;
+    }
+
+    /**
+     * 创建转发失败时回滚：删除已下发到节点的服务以及数据库中的转发和端口记录
+     */
+    private void rollbackCreateForward(Long forwardId, String serviceName, List<Long> successNodeIds) {
+        for (Long nodeId : successNodeIds) {
+            GostUtil.DeleteService(nodeId, forwardServiceNames(serviceName));
+        }
+        forwardPortService.remove(new QueryWrapper<ForwardPort>().eq("forward_id", forwardId));
+        this.removeById(forwardId);
     }
 
     @Override
@@ -213,65 +235,104 @@ public class ForwardServiceImpl extends ServiceImpl<ForwardMapper, Forward> impl
         // 1. 获取当前用户信息
         UserInfo currentUser = getCurrentUserInfo();
 
-
         // 2. 检查转发是否存在
         Forward existForward = validateForwardExists(forwardUpdateDto.getId(), currentUser);
         if (existForward == null) {
             return R.err("转发不存在");
         }
 
-
         Tunnel tunnel = validateTunnel(existForward.getTunnelId());
         if (tunnel == null) {
             return R.err("隧道不存在");
         }
 
-        UserPermissionResult permissionResult = checkUserPermissions(currentUser, tunnel, null);
+        // 编辑时排除当前这条转发本身，否则配额刚好用满的用户无法编辑
+        UserPermissionResult permissionResult = checkUserPermissions(currentUser, tunnel, existForward.getId());
         if (permissionResult.isHasError()) {
             return R.err(permissionResult.getErrorMessage());
         }
 
-        UserTunnel userTunnel;
-        if (currentUser.getRoleId() != 0) {
-            userTunnel = getUserTunnel(currentUser.getUserId(), tunnel.getId().intValue());
-            if (userTunnel == null) {
-                return R.err("你没有该隧道权限");
-            }
-        } else {
-            // 管理员用户也需要获取UserTunnel（如果存在的话），用于构建正确的服务名称
-            // 通过forward记录获取原始的用户ID
-            userTunnel = getUserTunnel(existForward.getUserId(), tunnel.getId().intValue());
+        // 服务名和限速都以转发所属用户的隧道权限为准：
+        // 管理员编辑他人转发、或绑定/修改限速规则时，不能把用户的限速丢掉
+        UserTunnel userTunnel = getUserTunnel(existForward.getUserId(), tunnel.getId().intValue());
+        if (currentUser.getRoleId() != 0 && userTunnel == null) {
+            return R.err("你没有该隧道权限");
         }
-
-        existForward.setRemoteAddr(forwardUpdateDto.getRemoteAddr());
-        existForward.setName(forwardUpdateDto.getName());
-        existForward.setStrategy(forwardUpdateDto.getStrategy());
-        existForward.setStatus(1);
-        this.updateById(existForward);
-
+        Integer limiter = userTunnel != null ? userTunnel.getSpeedId() : null;
+        String serviceName = buildServiceName(existForward.getId(), existForward.getUserId(), userTunnel);
 
         List<ChainTunnel> chainTunnels = chainTunnelService.list(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnel.getId()).eq("chain_type", 1));
+        if (chainTunnels.isEmpty()) {
+            return R.err("隧道没有入口节点");
+        }
 
-        // 自己占用的应该不算
-        chainTunnels = get_port(chainTunnels, forwardUpdateDto.getInPort(), existForward.getId());
+        // 端口：未修改（为空或与当前入口端口一致）时保留每个节点原有端口，不重新分配
+        List<ForwardPort> existingPorts = forwardPortService.list(new QueryWrapper<ForwardPort>().eq("forward_id", existForward.getId()));
+        Map<Long, ForwardPort> portByNode = new HashMap<>();
+        for (ForwardPort forwardPort : existingPorts) {
+            portByNode.put(forwardPort.getNodeId(), forwardPort);
+        }
+        Integer currentInPort = existingPorts.isEmpty() ? null : existingPorts.getFirst().getPort();
+        Integer requestInPort = forwardUpdateDto.getInPort();
+        boolean portUnchanged = requestInPort == null || Objects.equals(requestInPort, currentInPort);
+        boolean allNodesHavePort = chainTunnels.stream().allMatch(ct -> portByNode.containsKey(ct.getNodeId()));
+        if (portUnchanged && allNodesHavePort) {
+            for (ChainTunnel chainTunnel : chainTunnels) {
+                chainTunnel.setPort(portByNode.get(chainTunnel.getNodeId()).getPort());
+            }
+        } else {
+            // 自己占用的端口不算占用
+            chainTunnels = get_port(chainTunnels, requestInPort, existForward.getId());
+        }
 
-
-
+        Map<Long, Node> nodeMap = new HashMap<>();
         for (ChainTunnel chainTunnel : chainTunnels) {
-            String serviceName = buildServiceName(existForward.getId(), existForward.getUserId(), userTunnel);
-            Integer limiter = permissionResult.getLimiter();
             Node node = nodeService.getById(chainTunnel.getNodeId());
             if (node == null) {
                 return R.err("部分节点不存在");
             }
-            ForwardPort forwardPort = forwardPortService.getOne(new QueryWrapper<ForwardPort>().eq("forward_id", existForward.getId()).eq("node_id", node.getId()));
+            nodeMap.put(node.getId(), node);
+        }
+
+        // 编辑不改变暂停状态：已暂停（例如流量用尽被自动暂停）的转发更新后仍保持暂停
+        boolean wasPaused = Objects.equals(existForward.getStatus(), 0);
+        existForward.setRemoteAddr(forwardUpdateDto.getRemoteAddr());
+        existForward.setName(forwardUpdateDto.getName());
+        existForward.setStrategy(forwardUpdateDto.getStrategy());
+        existForward.setUpdatedTime(System.currentTimeMillis());
+        if (!wasPaused) {
+            existForward.setStatus(1);
+        }
+        this.updateById(existForward);
+
+        for (ChainTunnel chainTunnel : chainTunnels) {
+            Node node = nodeMap.get(chainTunnel.getNodeId());
+            ForwardPort forwardPort = portByNode.get(node.getId());
             if (forwardPort == null) {
-                return R.err("部分节点不存在1");
+                forwardPort = new ForwardPort();
+                forwardPort.setForwardId(existForward.getId());
+                forwardPort.setNodeId(node.getId());
             }
             forwardPort.setPort(chainTunnel.getPort());
-            forwardPortService.updateById(forwardPort);
+
             GostDto gostDto = GostUtil.AddAndUpdateService(serviceName, limiter, node, existForward, forwardPort, tunnel, "UpdateService");
-            if (!Objects.equals(gostDto.getMsg(), "OK")) return R.err(gostDto.getMsg());
+            if (gostDto != null && gostDto.getMsg() != null && gostDto.getMsg().contains("not found")) {
+                // 节点上服务丢失（例如节点重装），直接重新创建
+                gostDto = GostUtil.AddAndUpdateService(serviceName, limiter, node, existForward, forwardPort, tunnel, "AddService");
+            }
+            if (!isGostOk(gostDto)) {
+                return R.err(gostDto == null ? "节点无响应" : gostDto.getMsg());
+            }
+
+            if (forwardPort.getId() == null) {
+                forwardPortService.save(forwardPort);
+            } else {
+                forwardPortService.updateById(forwardPort);
+            }
+
+            if (wasPaused) {
+                GostUtil.PauseAndResumeService(node.getId(), serviceName, "PauseService");
+            }
         }
 
         return R.ok();
@@ -283,49 +344,30 @@ public class ForwardServiceImpl extends ServiceImpl<ForwardMapper, Forward> impl
         // 1. 获取当前用户信息
         UserInfo currentUser = getCurrentUserInfo();
 
-
-        // 2. 检查转发是否存在
+        // 2. 检查转发是否存在（普通用户只能删除自己的转发）
+        //    删除不做配额/流量/到期检查，否则配额用满或流量用尽的用户无法删除转发
         Forward forward = validateForwardExists(id, currentUser);
         if (forward == null) {
             return R.err("转发不存在");
         }
 
+        UserTunnel userTunnel = getUserTunnel(forward.getUserId(), forward.getTunnelId());
+        String serviceName = buildServiceName(forward.getId(), forward.getUserId(), userTunnel);
 
-        Tunnel tunnel = validateTunnel(forward.getTunnelId());
-        if (tunnel == null) {
-            return R.err("隧道不存在");
+        // 以转发实际占用端口的节点为准，没有端口记录时退回到隧道的入口节点
+        Set<Long> nodeIds = new LinkedHashSet<>();
+        for (ForwardPort forwardPort : forwardPortService.list(new QueryWrapper<ForwardPort>().eq("forward_id", id))) {
+            nodeIds.add(forwardPort.getNodeId());
         }
-
-        UserPermissionResult permissionResult = checkUserPermissions(currentUser, tunnel, null);
-        if (permissionResult.isHasError()) {
-            return R.err(permissionResult.getErrorMessage());
-        }
-        UserTunnel userTunnel = null;
-        if (currentUser.getRoleId() != 0) {
-            userTunnel = getUserTunnel(currentUser.getUserId(), tunnel.getId().intValue());
-            if (userTunnel == null) {
-                return R.err("你没有该隧道权限");
+        if (nodeIds.isEmpty()) {
+            for (ChainTunnel chainTunnel : chainTunnelService.list(new QueryWrapper<ChainTunnel>().eq("tunnel_id", forward.getTunnelId()).eq("chain_type", 1))) {
+                nodeIds.add(chainTunnel.getNodeId());
             }
-        } else {
-            // 管理员用户也需要获取UserTunnel（如果存在的话），用于构建正确的服务名称
-            // 通过forward记录获取原始的用户ID
-            userTunnel = getUserTunnel(forward.getUserId(), tunnel.getId().intValue());
+        }
+        for (Long nodeId : nodeIds) {
+            GostUtil.DeleteService(nodeId, forwardServiceNames(serviceName));
         }
 
-        List<ChainTunnel> chainTunnels = chainTunnelService.list(new QueryWrapper<ChainTunnel>().eq("tunnel_id", tunnel.getId()).eq("chain_type", 1));
-        for (ChainTunnel chainTunnel : chainTunnels) {
-
-            String serviceName = buildServiceName(forward.getId(), forward.getUserId(), userTunnel);
-            Node node = nodeService.getById(chainTunnel.getNodeId());
-            if (node == null) {
-                return R.err("部分节点不存在");
-            }
-
-            JSONArray services = new JSONArray();
-            services.add(serviceName + "_tcp");
-            services.add(serviceName + "_udp");
-            GostUtil.DeleteService(node.getId(), services);
-        }
         forwardPortService.remove(new QueryWrapper<ForwardPort>().eq("forward_id", id));
         this.removeById(id);
         return R.ok();
@@ -879,7 +921,11 @@ public class ForwardServiceImpl extends ServiceImpl<ForwardMapper, Forward> impl
 
     private R checkForwardQuota(Integer userId, Integer tunnelId, UserTunnel userTunnel, User userInfo, Long excludeForwardId) {
         // 检查用户总转发数量限制
-        long userForwardCount = this.count(new QueryWrapper<Forward>().eq("user_id", userId));
+        QueryWrapper<Forward> userQuery = new QueryWrapper<Forward>().eq("user_id", userId);
+        if (excludeForwardId != null) {
+            userQuery.ne("id", excludeForwardId);
+        }
+        long userForwardCount = this.count(userQuery);
         if (userForwardCount >= userInfo.getNum()) {
             return R.err("用户总转发数量已达上限，当前限制：" + userInfo.getNum() + "个");
         }

@@ -3,6 +3,7 @@ package socket
 import (
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -101,6 +102,14 @@ func updateServices(req updateServicesRequest) error {
 		}
 	}
 
+	// 记录更新前各服务的监听地址，用于判断端口是否发生变化
+	oldAddrs := make(map[string]string)
+	for _, s := range config.Global().Services {
+		if s != nil {
+			oldAddrs[s.Name] = s.Addr
+		}
+	}
+
 	// 第二阶段：按照原来的updateService逻辑，逐个更新服务
 	for _, serviceConfig := range req.Data {
 		name := strings.TrimSpace(serviceConfig.Name)
@@ -114,6 +123,14 @@ func updateServices(req updateServicesRequest) error {
 
 		// 3. 从注册表移除旧服务
 		registry.ServiceRegistry().Unregister(name)
+
+		// 监听端口变化时，强制断开旧端口上仍在保持的连接，
+		// 否则换端口后旧端口上的已有连接会一直存活（旧端口看起来“未释放”）
+		if oldAddr := oldAddrs[name]; oldAddr != "" && portOf(oldAddr) != portOf(serviceConfig.Addr) {
+			_ = kill.ForceClosePortConnections(oldAddr)
+			// 等待旧监听完全释放
+			time.Sleep(100 * time.Millisecond)
+		}
 
 		// 4. 解析新服务配置
 		svc, err := parser.ParseService(&serviceConfig)
@@ -145,6 +162,14 @@ func updateServices(req updateServicesRequest) error {
 	})
 
 	return nil
+}
+
+// portOf 返回监听地址中的端口部分，解析失败时返回原字符串
+func portOf(addr string) string {
+	if _, port, err := net.SplitHostPort(addr); err == nil {
+		return port
+	}
+	return addr
 }
 
 func deleteServices(req deleteServicesRequest) error {

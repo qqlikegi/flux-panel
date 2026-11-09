@@ -51,7 +51,7 @@ networks:
     name: gost-network
     driver: bridge
     enable_ipv6: true
+    # 只固定 IPv6 网段（启用 IPv6 必需），IPv4 网段由 Docker 自动分配，避免与已有网络冲突
     ipam:
       config:
-        - subnet: 172.20.0.0/16 
         - subnet: fd00:dead:beef::/48

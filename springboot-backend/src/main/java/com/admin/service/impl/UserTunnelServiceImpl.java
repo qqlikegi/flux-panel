@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -87,6 +88,8 @@ public class UserTunnelServiceImpl extends ServiceImpl<UserTunnelMapper, UserTun
         userTunnel.setSpeedId(updateDto.getSpeedId());
         this.updateById(userTunnel);
         if (speedChanged) {
+            // 把新的限速规则同步到该用户在此隧道下的所有转发（端口与暂停状态保持不变）
+            List<String> failed = new ArrayList<>();
             List<Forward> forwardList = forwardService.list(new QueryWrapper<Forward>().eq("user_id", userTunnel.getUserId()).eq("tunnel_id", userTunnel.getTunnelId()));
             for (Forward forward : forwardList) {
                 ForwardUpdateDto forwardUpdateDto = new ForwardUpdateDto();
@@ -95,10 +98,20 @@ public class UserTunnelServiceImpl extends ServiceImpl<UserTunnelMapper, UserTun
                 forwardUpdateDto.setName(forward.getName());
                 forwardUpdateDto.setRemoteAddr(forward.getRemoteAddr());
                 forwardUpdateDto.setStrategy(forward.getStrategy());
-                forwardService.updateForward(forwardUpdateDto);
+                try {
+                    R result = forwardService.updateForward(forwardUpdateDto);
+                    if (result.getCode() != 0) {
+                        failed.add(forward.getName() + "：" + result.getMsg());
+                    }
+                } catch (RuntimeException e) {
+                    failed.add(forward.getName() + "：" + e.getMessage());
+                }
+            }
+            if (!failed.isEmpty()) {
+                return R.err("权限已保存，但以下转发的限速同步失败：" + String.join("；", failed));
             }
         }
-        return R.err("用户隧道权限更新失败");
+        return R.ok();
     }
 
     private <T> void updateOptionalProperty(java.util.function.Consumer<T> setter, T value) {

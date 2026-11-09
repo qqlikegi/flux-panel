@@ -109,17 +109,26 @@ func main() {
 	// 加载配置文件
 	config, err := LoadConfig("config.json")
 	if err != nil {
-		fmt.Println("❌ 配置加载失败: %v\n", err)
+		fmt.Printf("❌ 配置加载失败: %v\n", err)
 		fmt.Println("请确保当前目录存在 config.json 文件")
 		os.Exit(1)
 	}
 
-	fmt.Println("✅ 配置加载成功 - addr: %s", config.Addr)
+	fmt.Printf("✅ 配置加载成功 - addr: %s\n", config.Addr)
+
+	// 面板下发的配置始终保存在工作目录的 gost.json（见 socket.saveConfig）。
+	// 未指定 -C 时 gost 默认优先读取 /etc/gost/gost.*，机器上残留 1.x 配置时
+	// 重启后会加载旧配置，导致服务、限速规则丢失。这里固定读取工作目录的 gost.json。
+	if cfgFile == "" {
+		if _, err := os.Stat("gost.json"); err == nil {
+			cfgFile = "gost.json"
+		}
+	}
 
 	log := xlogger.NewLogger()
 	logger.SetDefault(log)
 
-	wsReporter := socket.StartWebSocketReporterWithConfig(config.Addr, config.Secret, config.Http, config.Tls, config.Socks, "2.0.2")
+	wsReporter := socket.StartWebSocketReporterWithConfig(config.Addr, config.Secret, config.Http, config.Tls, config.Socks, "2.0.7")
 	defer wsReporter.Stop()
 	service.SetHTTPReportURL(config.Addr, config.Secret)
 
