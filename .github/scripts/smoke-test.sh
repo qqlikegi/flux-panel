@@ -45,7 +45,7 @@ step "创建节点并用安装脚本安装节点端"
 expect_ok /node/create '{"name":"ci","serverIp":"127.0.0.1","port":"31000-31010"}'
 SECRET=$(sqlite3 /opt/flux-panel/data/gost.db "select secret from node where id=1")
 cp "$ROOT/install.sh" /tmp/agent_install.sh   # 安装脚本执行完会删除自身
-AGENT_BINARY="$ART/gost-amd64" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET"
+AGENT_BINARY="$ART/gost-amd64" ZF_SCRIPT="$ROOT/zf.sh" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET"
 systemctl is-active --quiet flux_agent || fail "节点端服务未运行"
 
 for _ in $(seq 1 30); do
@@ -55,6 +55,26 @@ for _ in $(seq 1 30); do
 done
 [[ "$st" == "1" ]] || fail "节点未上线"
 echo "✅ 节点已上线"
+
+step "同一台机器共存安装第二个节点端实例"
+expect_ok /node/create '{"name":"ci2","serverIp":"127.0.0.1","port":"31011-31020"}'
+SECRET2=$(sqlite3 /opt/flux-panel/data/gost.db "select secret from node where name='ci2'")
+cp "$ROOT/install.sh" /tmp/agent_install.sh
+AGENT_BINARY="$ART/gost-amd64" ZF_SCRIPT="$ROOT/zf.sh" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET2" </dev/null
+systemctl is-active --quiet flux_agent2 || fail "第二个实例 flux_agent2 未运行"
+systemctl is-active --quiet flux_agent || fail "共存安装影响了原实例"
+grep -q "$SECRET" /etc/flux_agent/config.json || fail "原实例配置被覆盖"
+for _ in $(seq 1 30); do
+  st2=$(api /node/list | jq -r '.data[] | select(.name=="ci2") | .status')
+  [[ "$st2" == "1" ]] && break
+  sleep 2
+done
+[[ "$st2" == "1" ]] || fail "第二个实例未上线"
+cp "$ROOT/install.sh" /tmp/agent_install.sh
+AGENT_BINARY="$ART/gost-amd64" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET" </dev/null
+[[ ! -d /etc/flux_agent3 ]] || fail "同一节点重复安装不应新建实例"
+[[ -x /usr/local/bin/zf ]] && bash -n /usr/local/bin/zf || fail "zf 快捷菜单未安装"
+echo "✅ 多实例共存正常，zf 已安装"
 
 step "创建隧道和转发（转发到面板自身的 /flow/test）"
 expect_ok /tunnel/create '{"name":"t","inNodeId":[{"nodeId":1,"chainType":1}],"type":1,"flow":1,"trafficRatio":1}'
@@ -85,6 +105,14 @@ step "面板更新（同一二进制）"
 PANEL_BINARY="$ART/flux-panel-amd64" bash "$ROOT/panel_install.sh" update
 [[ "$(api /forward/list | jq '.data | length')" == "1" ]] || fail "更新后数据丢失"
 echo "✅ 更新后数据完好"
+
+step "命令行备份 / 导出数据库"
+(set -a; . /opt/flux-panel/flux-panel.env; set +a
+ /opt/flux-panel/flux-panel -backup /tmp/zf-bk/a.db && /opt/flux-panel/flux-panel -export /tmp/zf-bk/a.sql) || fail "备份/导出命令失败"
+[[ "$(sqlite3 /tmp/zf-bk/a.db 'select count(*) from forward')" == "1" ]] || fail "备份文件内容不对"
+sqlite3 /tmp/zf-imp.db < /tmp/zf-bk/a.sql || fail "导出的 SQL 无法导入"
+[[ "$(sqlite3 /tmp/zf-imp.db 'select count(*) from node')" == "2" ]] || fail "导入后数据不对"
+echo "✅ 备份 / 导出正常"
 
 echo
 echo "🎉 冒烟测试全部通过"

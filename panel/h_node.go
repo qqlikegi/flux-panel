@@ -286,7 +286,7 @@ func nodeInstall(c *Ctx) any {
 	}
 	ip, found := getConfigValue("ip")
 	if !found {
-		return fail("请先前往网站配置中设置ip")
+		return fail("请先前往「系统配置」设置面板地址")
 	}
 	cmd := "curl -L https://github.com/qqlikegi/flux-panel/releases/latest/download/install.sh -o ./install.sh && chmod +x ./install.sh && " +
 		"./install.sh -a " + processServerAddress(ip) + " -s " + node.secret()

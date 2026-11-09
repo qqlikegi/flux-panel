@@ -229,6 +229,39 @@ migrate_docker_data() {
 }
 
 # ---------------------------------------------------------------------
+# zf 快捷管理菜单（与节点端共用 /usr/local/bin/zf）
+# ---------------------------------------------------------------------
+ZF_BIN="/usr/local/bin/zf"
+SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)"
+
+install_zf() {
+  local tmp
+  tmp=$(mktemp)
+  if [[ -n "$ZF_SCRIPT" && -f "$ZF_SCRIPT" ]]; then
+    cp -f "$ZF_SCRIPT" "$tmp"
+  elif [[ -f "$SCRIPT_DIR/zf.sh" ]]; then
+    cp -f "$SCRIPT_DIR/zf.sh" "$tmp"
+  else
+    curl -fsL --retry 2 --connect-timeout 15 -o "$tmp" "${GH_PROXY}${RELEASE_URL}/zf.sh" 2>/dev/null
+  fi
+  if [[ -s "$tmp" ]] && grep -q "FLUX_ZF_MENU" "$tmp"; then
+    install -m 755 "$tmp" "$ZF_BIN" && echo "⌨️ 快捷菜单已就绪：在 SSH 里输入 zf 即可管理"
+  else
+    echo "⚠️ 快捷菜单 zf 下载失败（不影响面板运行）"
+  fi
+  rm -f "$tmp"
+}
+
+# 本机没有面板也没有节点端时删除 zf
+cleanup_zf() {
+  local f
+  for f in /etc/systemd/system/flux_agent*.service; do
+    [[ -f "$f" ]] && return 0
+  done
+  rm -f "$ZF_BIN"
+}
+
+# ---------------------------------------------------------------------
 # 安装 / 更新 / 卸载 / 状态
 # ---------------------------------------------------------------------
 install_panel() {
@@ -280,6 +313,7 @@ install_panel() {
     echo "📌 添加节点前，请在“系统配置”里把面板地址设为 ${ip}:${port}"
     echo "📁 安装目录: ${INSTALL_DIR}    配置文件: ${ENV_FILE}"
     echo "📜 查看日志: journalctl -u ${SERVICE_NAME} -f"
+    install_zf
   else
     echo "❌ 面板启动超时，请查看日志: journalctl -u ${SERVICE_NAME} -n 100"
     return 1
@@ -314,6 +348,7 @@ update_panel() {
   port=$(current_port)
   if wait_healthy "$port"; then
     echo "✅ 更新完成，当前版本: $(panel_version)"
+    install_zf
   else
     echo "❌ 新版本启动失败，正在回滚到旧版本..."
     systemctl stop "$SERVICE_NAME"
@@ -365,6 +400,7 @@ uninstall_panel() {
     find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf {} +
     echo "🧹 已删除程序文件，数据库保留在 ${INSTALL_DIR}/data"
   fi
+  cleanup_zf
   echo "✅ 卸载完成"
 }
 

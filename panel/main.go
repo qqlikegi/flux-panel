@@ -43,6 +43,8 @@ func env(key, def string) string {
 func main() {
 	showVersion := flag.Bool("v", false, "显示版本")
 	resetAdmin := flag.Bool("reset-admin", false, "重置管理员账号：重置后打开面板重新设置管理员用户名和密码")
+	backupFile := flag.String("backup", "", "备份数据库到指定文件（完整 SQLite 文件，面板运行中也可执行）")
+	exportFile := flag.String("export", "", "导出数据库为 SQL 文本到指定文件")
 	flag.Parse()
 	if *showVersion {
 		fmt.Println("flux-panel", version)
@@ -56,7 +58,13 @@ func main() {
 		LogDir:    env("LOG_DIR", "logs"),
 		WebDir:    env("WEB_DIR", ""),
 	}
-	setupLogger(cfg.LogDir)
+	cliMode := *resetAdmin || *backupFile != "" || *exportFile != ""
+	if !cliMode {
+		setupLogger(cfg.LogDir)
+	} else if _, err := os.Stat(cfg.DBPath); err != nil {
+		fmt.Fprintf(os.Stderr, "数据库文件不存在: %s\n", cfg.DBPath)
+		os.Exit(1)
+	}
 
 	if err := openDB(cfg.DBPath); err != nil {
 		log.Fatalf("打开数据库失败: %v", err)
@@ -68,6 +76,23 @@ func main() {
 			log.Fatalf("重置管理员失败: %v", err)
 		}
 		fmt.Println("管理员账号已重置，请打开面板重新设置管理员用户名和密码")
+		return
+	}
+	if *backupFile != "" || *exportFile != "" {
+		var err error
+		dst := *backupFile
+		if dst != "" {
+			err = backupDBTo(dst)
+		} else {
+			dst = *exportFile
+			err = exportSQLTo(dst)
+		}
+		if err != nil {
+			closeDB()
+			fmt.Fprintf(os.Stderr, "失败: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("已保存到:", dst)
 		return
 	}
 

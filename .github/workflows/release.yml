@@ -118,7 +118,7 @@ jobs:
         with:
           path: artifacts
           merge-multiple: true
-      - run: cp install.sh panel_install.sh artifacts/
+      - run: cp install.sh panel_install.sh zf.sh artifacts/
       - uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -128,5 +128,6 @@ jobs:
             artifacts/gost-arm64
             artifacts/install.sh
             artifacts/panel_install.sh
+            artifacts/zf.sh
           generate_release_notes: true
           make_latest: true
