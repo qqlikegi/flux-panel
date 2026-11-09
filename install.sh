@@ -6,8 +6,14 @@
 #    实例名 = systemd 服务名，统一以 flux_agent 开头，例如 flux_agent、flux_agent_b
 #    每个实例的目录为 /etc/<实例名>，服务为 <实例名>.service，互不影响
 #
+#  识别规则（面板的安装命令会带上 -f 面板指纹）：
+#    本机没有实例 → 全新安装
+#    某个实例的面板指纹相同 → 同一个面板，覆盖更新该实例（保留转发配置）
+#    某个实例的节点密钥相同 → 同一个节点（面板改过指纹/地址），覆盖更新并写入新指纹
+#    都对不上 → 另一个面板，询问：共存安装（默认）/ 覆盖已有实例 / 取消
+#
 #  用法：
-#    ./install.sh -a 面板地址 -s 密钥            安装（检测到已有实例时会询问覆盖还是共存）
+#    ./install.sh -a 面板地址 -s 密钥 -f 面板指纹  安装（面板「节点管理 → 安装」复制的命令）
 #    ./install.sh -a 面板地址 -s 密钥 -n 名称    直接安装到指定实例（不存在则新建，存在则覆盖）
 #    ./install.sh                                交互式菜单（安装 / 更新 / 卸载）
 #
@@ -94,6 +100,16 @@ instance_conf() {
   sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$file" | head -n1
 }
 
+# 实例是否属于本次安装的面板：指纹相同，或节点密钥相同，或旧版实例（无指纹）地址相同
+same_panel() {
+  local fp
+  fp=$(instance_conf "$1" fingerprint)
+  [[ -n "$FINGERPRINT" && "$fp" == "$FINGERPRINT" ]] && return 0
+  [[ "$(instance_conf "$1" secret)" == "$SECRET" ]] && return 0
+  [[ -z "$fp" && "$(instance_conf "$1" addr)" == "$SERVER_ADDR" ]] && return 0
+  return 1
+}
+
 instance_state() {
   systemctl is-active "$1" 2>/dev/null || true
 }
@@ -101,7 +117,7 @@ instance_state() {
 print_instances() {
   local i=1 name
   for name in "$@"; do
-    printf "  %d. %-20s 面板: %-24s 状态: %s\n" "$i" "$name" "$(instance_conf "$name" addr)" "$(instance_state "$name")"
+    printf "  %d. %-20s 面板: %-24s 指纹: %-9s 状态: %s\n" "$i" "$name" "$(instance_conf "$name" addr)" "$(instance_conf "$name" fingerprint || true)" "$(instance_state "$name")"
     i=$((i + 1))
   done
 }
@@ -184,20 +200,39 @@ choose_install_instance() {
     return 0
   fi
 
-  # 同一个面板的同一个节点（换机重装、重复执行安装命令）：直接覆盖原实例
+  local m
+  # ① 面板指纹相同：同一个面板，覆盖更新（优先选密钥也相同的那个实例）
+  if [[ -n "$FINGERPRINT" ]]; then
+    m=""
+    for name in "${existing[@]}"; do
+      [[ "$(instance_conf "$name" fingerprint)" == "$FINGERPRINT" ]] || continue
+      [[ -z "$m" ]] && m="$name"
+      if [[ "$(instance_conf "$name" secret)" == "$SECRET" ]]; then
+        m="$name"
+        break
+      fi
+    done
+    if [[ -n "$m" ]]; then
+      echo "🔍 面板指纹 ${FINGERPRINT} 相同，本机实例 ${m} 属于这个面板，将覆盖更新该实例"
+      INSTANCE="$m"
+      return 0
+    fi
+  fi
+  # ② 节点密钥相同：同一个节点（面板改过指纹 / 换过地址，或旧版安装的实例），覆盖更新
   for name in "${existing[@]}"; do
-    if [[ "$(instance_conf "$name" addr)" == "$SERVER_ADDR" && "$(instance_conf "$name" secret)" == "$SECRET" ]]; then
-      echo "🔍 本机已安装过这个节点（实例 ${name}），将覆盖重装该实例"
+    if [[ "$(instance_conf "$name" secret)" == "$SECRET" ]]; then
+      echo "🔍 本机已安装过这个节点（实例 ${name}），将覆盖更新该实例"
       INSTANCE="$name"
       return 0
     fi
   done
 
+  # ③ 都对不上：另一个面板的节点
   echo ""
-  echo "⚠️ 检测到本机已经安装了 ${#existing[@]} 个节点端实例："
+  echo "⚠️ 检测到本机已经安装了 ${#existing[@]} 个节点端实例，但都不属于这个面板："
   print_instances "${existing[@]}"
   echo ""
-  echo "本次安装的节点（面板 ${SERVER_ADDR}）要如何处理？"
+  echo "本次安装的节点（面板 ${SERVER_ADDR}${FINGERPRINT:+，指纹 ${FINGERPRINT}}）要如何处理？"
   echo "  1. 共存安装（新建一个实例，原有实例继续运行，适合一台机器对接多个面板）"
   echo "  2. 覆盖已有实例（原实例的连接配置会被替换）"
   echo "  3. 取消安装"
@@ -348,14 +383,19 @@ get_config_params() {
 }
 
 # 解析命令行参数
-while getopts "a:s:n:" opt; do
+while getopts "a:s:n:f:" opt; do
   case $opt in
     a) SERVER_ADDR="$OPTARG" ;;
     s) SECRET="$OPTARG" ;;
     n) INSTANCE="$OPTARG" ;;
+    f) FINGERPRINT="$OPTARG" ;;
     *) echo "❌ 无效参数"; exit 1 ;;
   esac
 done
+if [[ -n "$FINGERPRINT" && ! "$FINGERPRINT" =~ ^[A-Za-z0-9]{8}$ ]]; then
+  echo "⚠️ 面板指纹格式不正确（应为 8 位英文字母或数字），本次忽略指纹，仅按节点密钥识别"
+  FINGERPRINT=""
+fi
 
 # 下载节点端二进制到临时文件，成功后输出路径
 fetch_agent_binary() {
@@ -402,12 +442,15 @@ install_flux_agent() {
     systemctl stop "$svc" 2>/dev/null && echo "🛑 停止服务"
   fi
 
-  # 覆盖对接另一个面板的实例时，旧面板下发的转发配置不能保留
-  local old_addr
-  old_addr=$(instance_conf "$INSTANCE" addr)
+  # 本次没带指纹（旧版面板的安装命令）时，同一个面板的实例沿用原来的指纹
+  if [[ -z "$FINGERPRINT" && -f "$dir/config.json" ]] && same_panel "$INSTANCE"; then
+    FINGERPRINT=$(instance_conf "$INSTANCE" fingerprint)
+  fi
+
+  # 覆盖对接另一个面板的实例时，旧面板下发的转发配置不能保留；同一个面板则保留配置
   mkdir -p "$dir"
-  if [[ -n "$old_addr" && "$old_addr" != "$SERVER_ADDR" && -f "$dir/gost.json" ]]; then
-    echo "🧹 原实例对接的是面板 ${old_addr}，清空旧的转发配置"
+  if [[ -f "$dir/config.json" && -f "$dir/gost.json" ]] && ! same_panel "$INSTANCE"; then
+    echo "🧹 原实例对接的是另一个面板 $(instance_conf "$INSTANCE" addr)，清空旧的转发配置（已改名为 gost.json.old）"
     mv -f "$dir/gost.json" "$dir/gost.json.old"
   fi
 
@@ -420,7 +463,8 @@ install_flux_agent() {
   cat > "$dir/config.json" <<EOF
 {
   "addr": "$SERVER_ADDR",
-  "secret": "$SECRET"
+  "secret": "$SECRET",
+  "fingerprint": "$FINGERPRINT"
 }
 EOF
 
@@ -435,7 +479,7 @@ EOF
   # 创建 systemd 服务
   cat > "$service_file" <<EOF
 [Unit]
-Description=Flux_agent Proxy Service (${INSTANCE}, panel ${SERVER_ADDR})
+Description=Flux_agent Proxy Service (${INSTANCE}, panel ${SERVER_ADDR}${FINGERPRINT:+, fingerprint ${FINGERPRINT}})
 After=network.target
 
 [Service]

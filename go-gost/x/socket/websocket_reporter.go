@@ -853,23 +853,19 @@ func (w *WebSocketReporter) handleSetProtocol(data interface{}) error {
 func updateLocalConfigJSON(httpVal int, tlsVal int, socksVal int) error {
 	path := "config.json"
 
-	// 读取现有配置
-	type LocalConfig struct {
-		Addr   string `json:"addr"`
-		Secret string `json:"secret"`
-		Http   int    `json:"http"`
-		Tls    int    `json:"tls"`
-		Socks  int    `json:"socks"`
+	// 读取现有配置，保留全部字段（如安装脚本写入的面板指纹 fingerprint），只更新协议开关
+	cfg := map[string]interface{}{}
+	b, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(b, &cfg); err != nil {
+		return err
 	}
 
-	var cfg LocalConfig
-	if b, err := os.ReadFile(path); err == nil {
-		_ = json.Unmarshal(b, &cfg)
-	}
-
-	cfg.Http = httpVal
-	cfg.Tls = tlsVal
-	cfg.Socks = socksVal
+	cfg["http"] = httpVal
+	cfg["tls"] = tlsVal
+	cfg["socks"] = socksVal
 
 	// 写回
 	data, err := json.MarshalIndent(cfg, "", "  ")

@@ -45,6 +45,7 @@ func main() {
 	resetAdmin := flag.Bool("reset-admin", false, "重置管理员账号：重置后打开面板重新设置管理员用户名和密码")
 	backupFile := flag.String("backup", "", "备份数据库到指定文件（完整 SQLite 文件，面板运行中也可执行）")
 	exportFile := flag.String("export", "", "导出数据库为 SQL 文本到指定文件")
+	showFingerprint := flag.Bool("fingerprint", false, "显示面板指纹")
 	flag.Parse()
 	if *showVersion {
 		fmt.Println("flux-panel", version)
@@ -58,7 +59,7 @@ func main() {
 		LogDir:    env("LOG_DIR", "logs"),
 		WebDir:    env("WEB_DIR", ""),
 	}
-	cliMode := *resetAdmin || *backupFile != "" || *exportFile != ""
+	cliMode := *resetAdmin || *backupFile != "" || *exportFile != "" || *showFingerprint
 	if !cliMode {
 		setupLogger(cfg.LogDir)
 	} else if _, err := os.Stat(cfg.DBPath); err != nil {
@@ -76,6 +77,10 @@ func main() {
 			log.Fatalf("重置管理员失败: %v", err)
 		}
 		fmt.Println("管理员账号已重置，请打开面板重新设置管理员用户名和密码")
+		return
+	}
+	if *showFingerprint {
+		fmt.Println(panelFingerprint())
 		return
 	}
 	if *backupFile != "" || *exportFile != "" {
@@ -101,6 +106,7 @@ func main() {
 	}
 
 	initSetupState()
+	ensurePanelFingerprint()
 	backfillDailyFlow()
 	startTasks()
 	go backupScheduler()

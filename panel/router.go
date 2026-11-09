@@ -210,11 +210,13 @@ func newRouter() http.Handler {
 		// 数据总览
 		"POST /api/v1/dashboard/overview": admin(dashboardOverview),
 		// 云存储备份
-		"POST /api/v1/backup/get":  admin(backupGet),
-		"POST /api/v1/backup/save": admin(backupSave),
-		"POST /api/v1/backup/test": admin(backupTest),
-		"POST /api/v1/backup/run":  admin(backupRun),
-		"POST /api/v1/backup/list": admin(backupList),
+		"POST /api/v1/backup/get":       admin(backupGet),
+		"POST /api/v1/backup/save":      admin(backupSave),
+		"POST /api/v1/backup/test":      admin(backupTest),
+		"POST /api/v1/backup/run":       admin(backupRun),
+		"POST /api/v1/backup/list":      admin(backupList),
+		"POST /api/v1/fingerprint/get":  admin(fingerprintGet),
+		"POST /api/v1/fingerprint/save": admin(fingerprintSave),
 		// 系统配置
 		"POST /api/v1/config/list":          user(configList),
 		"POST /api/v1/config/get":           public(configGet),

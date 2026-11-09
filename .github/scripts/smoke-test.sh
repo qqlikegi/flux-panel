@@ -44,8 +44,12 @@ expect_ok() { local r; r=$(api "$1" "$2"); echo "$1 -> $r"; [[ "$(echo "$r" | jq
 step "创建节点并用安装脚本安装节点端"
 expect_ok /node/create '{"name":"ci","serverIp":"127.0.0.1","port":"31000-31010"}'
 SECRET=$(sqlite3 /opt/flux-panel/data/gost.db "select secret from node where id=1")
+FP=$(api /fingerprint/get | jq -r .data.fingerprint)
+[[ "$FP" =~ ^[A-Za-z0-9]{8}$ ]] || fail "面板指纹格式不对: $FP"
+api /node/install '{"id":1}' | jq -r .data | grep -q -- "-f $FP" || fail "安装命令未带面板指纹"
 cp "$ROOT/install.sh" /tmp/agent_install.sh   # 安装脚本执行完会删除自身
-AGENT_BINARY="$ART/gost-amd64" ZF_SCRIPT="$ROOT/zf.sh" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET"
+AGENT_BINARY="$ART/gost-amd64" ZF_SCRIPT="$ROOT/zf.sh" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET" -f "$FP"
+grep -q "\"fingerprint\": \"$FP\"" /etc/flux_agent/config.json || fail "实例配置未写入面板指纹"
 systemctl is-active --quiet flux_agent || fail "节点端服务未运行"
 
 for _ in $(seq 1 30); do
@@ -56,11 +60,11 @@ done
 [[ "$st" == "1" ]] || fail "节点未上线"
 echo "✅ 节点已上线"
 
-step "同一台机器共存安装第二个节点端实例"
+step "同一台机器共存安装第二个节点端实例（用另一个指纹模拟第二个面板）"
 expect_ok /node/create '{"name":"ci2","serverIp":"127.0.0.1","port":"31011-31020"}'
 SECRET2=$(sqlite3 /opt/flux-panel/data/gost.db "select secret from node where name='ci2'")
 cp "$ROOT/install.sh" /tmp/agent_install.sh
-AGENT_BINARY="$ART/gost-amd64" ZF_SCRIPT="$ROOT/zf.sh" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET2" </dev/null
+AGENT_BINARY="$ART/gost-amd64" ZF_SCRIPT="$ROOT/zf.sh" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET2" -f OtherP99 </dev/null
 systemctl is-active --quiet flux_agent2 || fail "第二个实例 flux_agent2 未运行"
 systemctl is-active --quiet flux_agent || fail "共存安装影响了原实例"
 grep -q "$SECRET" /etc/flux_agent/config.json || fail "原实例配置被覆盖"
@@ -71,8 +75,15 @@ for _ in $(seq 1 30); do
 done
 [[ "$st2" == "1" ]] || fail "第二个实例未上线"
 cp "$ROOT/install.sh" /tmp/agent_install.sh
-AGENT_BINARY="$ART/gost-amd64" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET" </dev/null
-[[ ! -d /etc/flux_agent3 ]] || fail "同一节点重复安装不应新建实例"
+AGENT_BINARY="$ART/gost-amd64" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET" -f "$FP" </dev/null
+[[ ! -d /etc/flux_agent3 ]] || fail "指纹相同重复安装不应新建实例"
+# 面板改了指纹：靠节点密钥认出原实例，覆盖并写入新指纹
+FP2=$(api /fingerprint/save '{"regenerate":true}' | jq -r .data.fingerprint)
+[[ "$FP2" =~ ^[A-Za-z0-9]{8}$ && "$FP2" != "$FP" ]] || fail "重新生成指纹失败"
+cp "$ROOT/install.sh" /tmp/agent_install.sh
+AGENT_BINARY="$ART/gost-amd64" bash /tmp/agent_install.sh -a "127.0.0.1:${PORT}" -s "$SECRET" -f "$FP2" </dev/null
+[[ ! -d /etc/flux_agent3 ]] || fail "改指纹后重装不应新建实例"
+grep -q "\"fingerprint\": \"$FP2\"" /etc/flux_agent/config.json || fail "改指纹后重装未写入新指纹"
 [[ -x /usr/local/bin/zf ]] && bash -n /usr/local/bin/zf || fail "zf 快捷菜单未安装"
 echo "✅ 多实例共存正常，zf 已安装"
 

@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import { updateConfigs } from '@/api';
 import { SettingsIcon } from '@/components/icons';
 import BackupSettings from '@/components/backup-settings';
+import FingerprintSettings from '@/components/fingerprint-settings';
 
 import { isAdmin } from '@/utils/auth';
 import { getCachedConfigs, clearConfigCache, updateSiteConfig } from '@/config/site';
@@ -426,6 +427,8 @@ export default function ConfigPage() {
         )}
 
         {/* 云存储备份 */}
+        <FingerprintSettings />
+
         <BackupSettings />
       </div>
     

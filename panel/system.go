@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/rand"
 	"database/sql"
 	"errors"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -211,4 +213,57 @@ func dashboardOverview(c *Ctx) any {
 		"totalUsedFlow": totalUsed, "todayFlow": totalToday, "monthFlow": totalMonth,
 		"userCount": len(list), "users": list, "statisticsFlows": flows,
 	})
+}
+
+// ---------- 面板指纹：8 位英文 + 数字，标识“哪个面板”，随数据库备份走 ----------
+// 节点端安装时写进 config.json，重装时据此判断：同一个面板 → 覆盖更新；别的面板 → 共存安装。
+
+const fingerprintKey = "panel_fingerprint"
+
+var fingerprintRe = regexp.MustCompile(`^[A-Za-z0-9]{8}$`)
+
+func newFingerprint() string {
+	const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789"
+	b := make([]byte, 8)
+	if _, err := rand.Read(b); err != nil {
+		panic(err)
+	}
+	for i := range b {
+		b[i] = chars[int(b[i])%len(chars)]
+	}
+	return string(b)
+}
+
+// ensurePanelFingerprint 启动时调用：全新安装或旧版本升级上来时生成一次，之后保持不变
+func ensurePanelFingerprint() {
+	if fingerprintRe.MatchString(getSetting(fingerprintKey)) {
+		return
+	}
+	setSetting(fingerprintKey, newFingerprint())
+}
+
+func panelFingerprint() string {
+	ensurePanelFingerprint()
+	return getSetting(fingerprintKey)
+}
+
+func fingerprintGet(c *Ctx) any {
+	return ok(map[string]any{"fingerprint": panelFingerprint()})
+}
+
+func fingerprintSave(c *Ctx) any {
+	var d struct {
+		Fingerprint Str  `json:"fingerprint"`
+		Regenerate  bool `json:"regenerate"`
+	}
+	c.bind(&d)
+	fp := strings.TrimSpace(d.Fingerprint.V)
+	if d.Regenerate {
+		fp = newFingerprint()
+	}
+	if !fingerprintRe.MatchString(fp) {
+		return fail("指纹必须是 8 位英文字母或数字")
+	}
+	setSetting(fingerprintKey, fp)
+	return ok(map[string]any{"fingerprint": fp})
 }

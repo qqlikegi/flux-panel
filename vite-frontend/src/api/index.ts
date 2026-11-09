@@ -102,3 +102,5 @@ export const saveBackupConfig = (data: any) => Network.post("/backup/save", data
 export const testBackupConfig = (data: any) => Network.post("/backup/test", data);
 export const runBackupNow = () => Network.post("/backup/run");
 export const listBackups = () => Network.post("/backup/list");
+export const getFingerprint = () => Network.post("/fingerprint/get");
+export const saveFingerprint = (data: { fingerprint: string; regenerate: boolean }) => Network.post("/fingerprint/save", data);

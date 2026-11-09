@@ -153,9 +153,11 @@ list_agents() {
   } | sort -u
 }
 
-agent_addr() {
-  sed -n 's/.*"addr"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$AGENT_ROOT/$1/config.json" 2>/dev/null | head -n1
+agent_conf() {
+  sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$AGENT_ROOT/$1/config.json" 2>/dev/null | head -n1
 }
+agent_addr() { agent_conf "$1" addr; }
+agent_fp() { local f; f=$(agent_conf "$1" fingerprint); echo "${f:--}"; }
 
 # ---------------------------------------------------------------------
 # 面板
@@ -172,6 +174,12 @@ panel_db() {
 
 panel_bin_supports() {
   "${PANEL_DIR}/flux-panel" -h 2>&1 | grep -q -- "-$1"
+}
+
+panel_fp() {
+  local f=""
+  panel_bin_supports fingerprint && f=$(panel_cli -fingerprint 2>/dev/null)
+  echo "${f:--}"
 }
 
 panel_cli() {
@@ -262,6 +270,7 @@ panel_menu() {
     echo "        flux-panel 面板 快捷管理（zf）"
     echo "==============================================="
     echo "  版本: $("${PANEL_DIR}/flux-panel" -v 2>/dev/null | awk '{print $2}')    状态: $(svc_state "$PANEL_SVC")    端口: $(panel_env_get SERVER_PORT)"
+    echo "  面板指纹: $(panel_fp)（系统配置里可查看和修改）"
     echo "-----------------------------------------------"
     echo "  1. 更新到最新版（GitHub）"
     echo "  2. 启动"
@@ -391,7 +400,7 @@ agent_menu() {
     echo "==============================================="
     echo "      节点端 ${name} 快捷管理（zf）"
     echo "==============================================="
-    echo "  面板: $(agent_addr "$name")    状态: $(svc_state "$name")"
+    echo "  面板: $(agent_addr "$name")    指纹: $(agent_fp "$name")    状态: $(svc_state "$name")"
     echo "  目录: $AGENT_ROOT/${name}    版本: $("$AGENT_ROOT/${name}/flux_agent" -V 2>/dev/null | head -n1)"
     echo "-----------------------------------------------"
     echo "  1. 更新到最新版（GitHub）"
@@ -429,12 +438,12 @@ main() {
     local targets=() labels=() agents=() n
     if panel_installed; then
       targets+=("panel")
-      labels+=("$(printf '%-22s 状态: %-10s 端口: %s' "面板 flux-panel" "$(svc_state "$PANEL_SVC")" "$(panel_env_get SERVER_PORT)")")
+      labels+=("$(printf '%-22s 状态: %-10s 指纹: %-9s 端口: %s' "面板 flux-panel" "$(svc_state "$PANEL_SVC")" "$(panel_fp)" "$(panel_env_get SERVER_PORT)")")
     fi
     mapfile -t agents < <(list_agents)
     for n in "${agents[@]}"; do
       targets+=("$n")
-      labels+=("$(printf '%-22s 状态: %-10s 面板: %s' "节点 $n" "$(svc_state "$n")" "$(agent_addr "$n")")")
+      labels+=("$(printf '%-22s 状态: %-10s 指纹: %-9s 面板: %s' "节点 $n" "$(svc_state "$n")" "$(agent_fp "$n")" "$(agent_addr "$n")")")
     done
 
     if [[ ${#targets[@]} -eq 0 ]]; then
