@@ -12,8 +12,6 @@
 #    某个实例的节点密钥相同 → 同一个节点（面板改过指纹/地址），覆盖更新并写入新指纹
 #    都对不上 → 另一个面板，询问：共存安装（默认）/ 覆盖已有实例 / 取消
 #
-#  旧版（flux_agent*）实例会被一起识别，安装或更新时自动迁移为 forwardz_agent* 命名，配置原样保留。
-#
 #  用法：
 #    ./install.sh -a 面板地址 -s 密钥 -f 面板指纹  安装（面板「节点管理 → 安装」复制的命令）
 #    ./install.sh -a 面板地址 -s 密钥 -n 名称      直接安装到指定实例（不存在则新建，存在则覆盖）
@@ -25,10 +23,8 @@
 
 REPO="qqlikegi/forwardz"          # 发布 Release 的 GitHub 仓库
 SVC_PREFIX="forwardz_agent"         # 实例名 / 服务名前缀，也是程序文件名
-LEGACY_PREFIX="flux_agent"          # 改名前的实例前缀（自动迁移）
 CONF_NAME="forwardz.json"           # 面板下发的转发配置
 PANEL_SVC="forwardz-panel"
-LEGACY_PANEL_SVC="flux-panel"
 SYSTEMD_DIR="${FORWARDZ_SYSTEMD_DIR:-/etc/systemd/system}"
 AGENT_ROOT="${FORWARDZ_AGENT_ROOT:-/etc}"   # 实例目录的上级目录（仅测试时覆盖）
 ZF_BIN="/usr/local/bin/zf"
@@ -78,32 +74,24 @@ valid_instance_name() {
   [[ "$1" =~ ^${SVC_PREFIX}([0-9]+|_[A-Za-z0-9_-]+)?$ && ${#1} -le 48 ]]
 }
 
-is_legacy() {
-  [[ "$1" =~ ^${LEGACY_PREFIX}[A-Za-z0-9_-]*$ ]]
-}
-
 # 实例的程序文件
 instance_bin() {
-  if is_legacy "$1"; then
-    echo "$AGENT_ROOT/$1/flux_agent"
-  else
-    echo "$AGENT_ROOT/$1/$SVC_PREFIX"
-  fi
+  echo "$AGENT_ROOT/$1/$SVC_PREFIX"
 }
 
-# 列出本机全部节点端实例（含旧版 flux_agent*），依据服务文件或带 config.json 的安装目录
+# 列出本机全部节点端实例，依据服务文件或带 config.json 的安装目录
 list_instances() {
   local f name
   {
-    for f in "$SYSTEMD_DIR"/${SVC_PREFIX}*.service "$SYSTEMD_DIR"/${LEGACY_PREFIX}*.service; do
+    for f in "$SYSTEMD_DIR"/${SVC_PREFIX}*.service; do
       [[ -f "$f" ]] || continue
       name=$(basename "$f" .service)
-      { valid_instance_name "$name" || is_legacy "$name"; } && echo "$name"
+      valid_instance_name "$name" && echo "$name"
     done
-    for f in "$AGENT_ROOT"/${SVC_PREFIX}*/config.json "$AGENT_ROOT"/${LEGACY_PREFIX}*/config.json; do
+    for f in "$AGENT_ROOT"/${SVC_PREFIX}*/config.json; do
       [[ -f "$f" ]] || continue
       name=$(basename "$(dirname "$f")")
-      { valid_instance_name "$name" || is_legacy "$name"; } && echo "$name"
+      valid_instance_name "$name" && echo "$name"
     done
   } | sort -u
 }
@@ -119,7 +107,7 @@ instance_conf() {
   sed -n "s/.*\"$2\"[[:space:]]*:[[:space:]]*\"\([^\"]*\)\".*/\1/p" "$file" | head -n1
 }
 
-# 实例是否属于本次安装的面板：指纹相同，或节点密钥相同，或旧版实例（无指纹）地址相同
+# 实例是否属于本次安装的面板：指纹相同，或节点密钥相同，或没有指纹的实例地址相同
 same_panel() {
   local fp
   fp=$(instance_conf "$1" fingerprint)
@@ -134,11 +122,9 @@ instance_state() {
 }
 
 print_instances() {
-  local i=1 name tag
+  local i=1 name
   for name in "$@"; do
-    tag=""
-    is_legacy "$name" && tag="（旧版，将自动迁移）"
-    printf "  %d. %-22s 面板: %-24s 指纹: %-9s 状态: %s%s\n" "$i" "$name" "$(instance_conf "$name" addr)" "$(instance_conf "$name" fingerprint || true)" "$(instance_state "$name")" "$tag"
+    printf "  %d. %-22s 面板: %-24s 指纹: %-9s 状态: %s\n" "$i" "$name" "$(instance_conf "$name" addr)" "$(instance_conf "$name" fingerprint || true)" "$(instance_state "$name")"
     i=$((i + 1))
   done
 }
@@ -229,26 +215,7 @@ WantedBy=multi-user.target
 EOF
 }
 
-# 把旧版实例 $1 迁移为新实例 $2：连接配置、转发配置、设备标识原样保留，旧服务停止并删除
-migrate_legacy() {
-  local old="$1" new="$2" odir="$AGENT_ROOT/$1" ndir="$AGENT_ROOT/$2"
-  echo "♻️ 迁移旧版实例 ${old} → ${new}"
-  systemctl stop "$old" 2>/dev/null
-  systemctl disable "$old" >/dev/null 2>&1
-  rm -f "$SYSTEMD_DIR/${old}.service"
-  mkdir -p "$ndir"
-  [[ -f "$odir/config.json" ]] && mv -f "$odir/config.json" "$ndir/config.json"
-  if [[ -f "$odir/$CONF_NAME" ]]; then
-    mv -f "$odir/$CONF_NAME" "$ndir/$CONF_NAME"
-  elif [[ -f "$odir/gost.json" ]]; then
-    mv -f "$odir/gost.json" "$ndir/$CONF_NAME"
-  fi
-  [[ -f "$odir/device.id" ]] && mv -f "$odir/device.id" "$ndir/device.id"
-  [[ -f "$odir/flux_agent" && ! -f "$ndir/$SVC_PREFIX" ]] && mv -f "$odir/flux_agent" "$ndir/$SVC_PREFIX"
-  [[ -n "$old" && -d "$odir" ]] && rm -rf "$odir"
-}
-
-# 决定本次安装到哪个实例，结果在 $INSTANCE（可能是旧版实例名，安装时再迁移）
+# 决定本次安装到哪个实例，结果在 $INSTANCE
 choose_install_instance() {
   if [[ -n "$INSTANCE" ]]; then
     local n
@@ -285,7 +252,7 @@ choose_install_instance() {
       return 0
     fi
   fi
-  # ② 节点密钥相同：同一个节点（面板改过指纹 / 换过地址，或旧版安装的实例），覆盖更新
+  # ② 节点密钥相同：同一个节点（面板改过指纹 / 换过地址，或没带指纹安装的实例），覆盖更新
   for name in "${existing[@]}"; do
     if [[ "$(instance_conf "$name" secret)" == "$SECRET" ]]; then
       echo "🔍 本机已安装过这个节点（实例 ${name}），将覆盖更新该实例"
@@ -355,7 +322,7 @@ install_zf() {
 
 # 本机没有任何 ForwardZ 服务时删除 zf
 cleanup_zf() {
-  if [[ -z "$(list_instances)" && ! -f "$SYSTEMD_DIR/${PANEL_SVC}.service" && ! -f "$SYSTEMD_DIR/${LEGACY_PANEL_SVC}.service" ]]; then
+  if [[ -z "$(list_instances)" && ! -f "$SYSTEMD_DIR/${PANEL_SVC}.service" ]]; then
     rm -f "$ZF_BIN"
   fi
 }
@@ -497,7 +464,7 @@ install_agent() {
   if [[ -f "$AGENT_ROOT/$INSTANCE/config.json" ]]; then
     same_panel "$INSTANCE" && same=1
     old_addr=$(instance_conf "$INSTANCE" addr)
-    # 本次没带指纹（旧版面板的安装命令）时，同一个面板的实例沿用原来的指纹
+    # 本次没带指纹（手动安装没加 -f）时，同一个面板的实例沿用原来的指纹
     if [[ -z "$FINGERPRINT" && $same -eq 1 ]]; then
       FINGERPRINT=$(instance_conf "$INSTANCE" fingerprint)
     fi
@@ -507,14 +474,6 @@ install_agent() {
   local bin
   bin=$(fetch_agent_binary) || exit 1
   echo "✅ 下载完成"
-
-  # 旧版实例：先迁移为新命名
-  if is_legacy "$INSTANCE"; then
-    local new
-    new=$(first_free_name)
-    migrate_legacy "$INSTANCE" "$new"
-    INSTANCE="$new"
-  fi
 
   local dir="$AGENT_ROOT/${INSTANCE}"
   local svc="${INSTANCE}"
@@ -526,8 +485,6 @@ install_agent() {
   fi
 
   mkdir -p "$dir"
-  # 改名前的转发配置
-  [[ -f "$dir/gost.json" && ! -f "$dir/$CONF_NAME" ]] && mv -f "$dir/gost.json" "$dir/$CONF_NAME"
   # 覆盖对接另一个面板的实例时，旧面板下发的转发配置不能保留；同一个面板则保留配置
   if [[ -n "$old_addr" && $same -eq 0 && -f "$dir/$CONF_NAME" ]]; then
     echo "🧹 原实例对接的是另一个面板 ${old_addr}，清空旧的转发配置（已改名为 ${CONF_NAME}.old）"
@@ -581,15 +538,6 @@ EOF
 # ---------------------------------------------------------------------
 update_one() {
   local name="$1" bin="$2"
-  if is_legacy "$name"; then
-    local new
-    new=$(first_free_name)
-    migrate_legacy "$name" "$new"
-    write_unit "$new" "$(instance_conf "$new" addr)" "$(instance_conf "$new" fingerprint)"
-    systemctl daemon-reload
-    systemctl enable "$new" >/dev/null 2>&1
-    name="$new"
-  fi
   local dir="$AGENT_ROOT/$name" exe="$AGENT_ROOT/$name/$SVC_PREFIX"
   echo "🔄 更新实例 ${name} ..."
   [[ -f "$exe" ]] && cp -f "$exe" "$exe.bak"

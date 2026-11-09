@@ -6,7 +6,7 @@ import (
 )
 
 func TestPanelFingerprint(t *testing.T) {
-	if err := openDB(filepath.Join(t.TempDir(), "gost.db")); err != nil {
+	if err := openDB(filepath.Join(t.TempDir(), "forwardz.db")); err != nil {
 		t.Fatal(err)
 	}
 	defer closeDB()

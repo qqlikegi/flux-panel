@@ -102,8 +102,8 @@ func init() {
 	flag.Parse()
 
 	if printVersion {
-		fmt.Fprintf(os.Stdout, "forwardz %s (based on gost %s; %s %s/%s)\n",
-			agentVersion, gostBaseVersion, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+		fmt.Fprintf(os.Stdout, "forwardz %s (%s %s/%s)\n",
+			agentVersion, runtime.Version(), runtime.GOOS, runtime.GOARCH)
 		os.Exit(0)
 	}
 }
@@ -121,16 +121,8 @@ func main() {
 
 	// 面板下发的配置始终保存在工作目录的 forwardz.json（见 socket.saveConfig），这里固定读取它，
 	// 不去系统目录里找配置，避免和机器上的其他转发程序互相干扰。
-	// 旧版本保存的是 gost.json：首次启动时自动改名为 forwardz.json。
 	// 工作目录没有配置时（手动运行、文件被误删）自动创建空配置，避免启动直接退出。
 	if cfgFile == "" {
-		if _, err := os.Stat("forwardz.json"); os.IsNotExist(err) {
-			if _, err := os.Stat("gost.json"); err == nil {
-				if err := os.Rename("gost.json", "forwardz.json"); err == nil {
-					fmt.Println("📦 已将旧配置 gost.json 迁移为 forwardz.json")
-				}
-			}
-		}
 		if _, err := os.Stat("forwardz.json"); os.IsNotExist(err) {
 			_ = os.WriteFile("forwardz.json", []byte("{}\n"), 0644)
 		}

@@ -259,11 +259,11 @@ func forwardCreate(c *Ctx) any {
 	for _, ct := range chains {
 		node := nodes[ct.NodeID]
 		mustExec("INSERT INTO forward_port (forward_id, node_id, port) VALUES (?, ?, ?)", id, node.ID, ct.port())
-		r := gostAddOrUpdateService(name, limiter, node, f, ct.port(), tunnel, "AddService")
+		r := agentAddOrUpdateService(name, limiter, node, f, ct.port(), tunnel, "AddService")
 		if !r.ok() {
 			// 回滚：删除已下发到节点的服务和数据库记录
 			for _, n := range okNodes {
-				gostDeleteService(n, forwardServiceNames(name))
+				agentDeleteService(n, forwardServiceNames(name))
 			}
 			mustExec("DELETE FROM forward_port WHERE forward_id = ?", id)
 			mustExec("DELETE FROM forward WHERE id = ?", id)
@@ -379,9 +379,9 @@ func applyForwardUpdate(f *Forward, a actor, inPort *int64) string {
 
 	for _, ct := range chains {
 		node := nodes[ct.NodeID]
-		r := gostAddOrUpdateService(name, limiter, node, f, ct.port(), tunnel, "UpdateService")
+		r := agentAddOrUpdateService(name, limiter, node, f, ct.port(), tunnel, "UpdateService")
 		if strings.Contains(r.Msg, "not found") {
-			r = gostAddOrUpdateService(name, limiter, node, f, ct.port(), tunnel, "AddService")
+			r = agentAddOrUpdateService(name, limiter, node, f, ct.port(), tunnel, "AddService")
 		}
 		if !r.ok() {
 			return r.Msg
@@ -392,7 +392,7 @@ func applyForwardUpdate(f *Forward, a actor, inPort *int64) string {
 			mustExec("INSERT INTO forward_port (forward_id, node_id, port) VALUES (?, ?, ?)", f.ID, node.ID, ct.port())
 		}
 		if wasPaused {
-			gostPauseResume(node.ID, name, "PauseService")
+			agentPauseResume(node.ID, name, "PauseService")
 		}
 	}
 	return ""
@@ -427,7 +427,7 @@ func deleteForwardInternal(f *Forward) {
 		}
 	}
 	for _, n := range nodeIDs {
-		gostDeleteService(n, forwardServiceNames(name))
+		agentDeleteService(n, forwardServiceNames(name))
 	}
 	mustExec("DELETE FROM forward_port WHERE forward_id = ?", f.ID)
 	mustExec("DELETE FROM forward WHERE id = ?", f.ID)
@@ -499,7 +499,7 @@ func changeForwardStatus(c *Ctx, id int64, target int64, method string) any {
 		if node == nil {
 			return fail("部分节点不存在")
 		}
-		if r := gostPauseResume(node.ID, name, method); !r.ok() {
+		if r := agentPauseResume(node.ID, name, method); !r.ok() {
 			return fail(r.Msg)
 		}
 	}
@@ -668,11 +668,11 @@ func speedCreate(c *Ctx) any {
 	speed := speedToMBps(d.Speed.Int())
 	var okNodes []int64
 	for _, nodeID := range tunnelNodeIDs(d.TunnelID.Int()) {
-		r := gostAddLimiter(nodeID, id, speed)
+		r := agentAddLimiter(nodeID, id, speed)
 		if !r.ok() {
 			mustExec("DELETE FROM speed_limit WHERE id = ?", id)
 			for _, n := range okNodes {
-				gostDeleteLimiter(n, id)
+				agentDeleteLimiter(n, id)
 			}
 			return fail(r.Msg)
 		}
@@ -715,7 +715,7 @@ func speedUpdate(c *Ctx) any {
 	}
 	speed := speedToMBps(d.Speed.Int())
 	for _, nodeID := range tunnelNodeIDs(l.TunnelID) {
-		if r := gostUpdateLimiter(nodeID, l.ID, speed); !r.ok() {
+		if r := agentUpdateLimiter(nodeID, l.ID, speed); !r.ok() {
 			return fail(r.Msg)
 		}
 	}
@@ -733,7 +733,7 @@ func speedDelete(c *Ctx) any {
 		return fail("该限速规则还有用户在使用 请先取消分配")
 	}
 	for _, nodeID := range tunnelNodeIDs(l.TunnelID) {
-		if r := gostDeleteLimiter(nodeID, id); !r.ok() {
+		if r := agentDeleteLimiter(nodeID, id); !r.ok() {
 			return fail(r.Msg)
 		}
 	}

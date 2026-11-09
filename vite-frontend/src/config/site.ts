@@ -17,7 +17,7 @@ const getInitialConfig = () => {
   }
 
   const cachedAppName = localStorage.getItem(CACHE_PREFIX + 'app_name');
-    if (cachedAppName && cachedAppName !== "flux") {
+    if (cachedAppName) {
       return {
         name: cachedAppName,
         version: VERSION,

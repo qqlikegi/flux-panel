@@ -12,13 +12,13 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-// GostResult 节点执行命令的结果（对应 Java 版 GostDto）
-type GostResult struct {
+// AgentResult 节点执行命令的结果（节点执行命令的返回）
+type AgentResult struct {
 	Msg  string
 	Data map[string]any
 }
 
-func (g *GostResult) ok() bool { return g != nil && g.Msg == "OK" }
+func (g *AgentResult) ok() bool { return g != nil && g.Msg == "OK" }
 
 type wsConn struct {
 	conn    *websocket.Conn
@@ -54,7 +54,7 @@ type Hub struct {
 	mu      sync.RWMutex
 	nodes   map[int64]*wsConn
 	admins  map[*wsConn]struct{}
-	pending sync.Map // requestId -> chan *GostResult
+	pending sync.Map // requestId -> chan *AgentResult
 }
 
 var hub = &Hub{nodes: map[int64]*wsConn{}, admins: map[*wsConn]struct{}{}}
@@ -183,7 +183,7 @@ func (h *Hub) onMessage(c *wsConn, raw []byte) {
 		}
 		if err := json.Unmarshal(payload, &resp); err == nil && resp.RequestID != "" {
 			if ch, ok := h.pending.LoadAndDelete(resp.RequestID); ok {
-				result := &GostResult{}
+				result := &AgentResult{}
 				if resp.Message != nil {
 					result.Msg = *resp.Message
 				} else if resp.Type == "PingResponse" {
@@ -195,7 +195,7 @@ func (h *Hub) onMessage(c *wsConn, raw []byte) {
 				if len(resp.Data) > 0 && json.Unmarshal(resp.Data, &data) == nil {
 					result.Data = data
 				}
-				ch.(chan *GostResult) <- result
+				ch.(chan *AgentResult) <- result
 			}
 		}
 		log.Printf("收到节点 %d 响应: %s", c.id, truncate(payload, 500))
@@ -244,21 +244,21 @@ func (h *Hub) closeAll() {
 }
 
 // sendMsg 向节点发送命令并等待响应（最长 10 秒）
-func sendMsg(nodeID int64, data any, typ string) *GostResult {
+func sendMsg(nodeID int64, data any, typ string) *AgentResult {
 	hub.mu.RLock()
 	c := hub.nodes[nodeID]
 	hub.mu.RUnlock()
 	if c == nil {
-		return &GostResult{Msg: "节点不在线"}
+		return &AgentResult{Msg: "节点不在线"}
 	}
 	requestID := newUUID()
-	ch := make(chan *GostResult, 1)
+	ch := make(chan *AgentResult, 1)
 	hub.pending.Store(requestID, ch)
 	defer hub.pending.Delete(requestID)
 
 	msg, _ := json.Marshal(map[string]any{"type": typ, "data": data, "requestId": requestID})
 	if err := c.send(msg); err != nil {
-		return &GostResult{Msg: "发送消息失败: " + err.Error()}
+		return &AgentResult{Msg: "发送消息失败: " + err.Error()}
 	}
 	select {
 	case r := <-ch:
@@ -266,7 +266,7 @@ func sendMsg(nodeID int64, data any, typ string) *GostResult {
 		return r
 	case <-time.After(10 * time.Second):
 		log.Printf("节点 %d 执行 %s 响应超时", nodeID, typ)
-		return &GostResult{Msg: "等待响应超时"}
+		return &AgentResult{Msg: "等待响应超时"}
 	}
 }
 

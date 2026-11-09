@@ -55,7 +55,7 @@ func main() {
 	cfg = Config{
 		Port:      env("SERVER_PORT", "6365"),
 		JWTSecret: env("JWT_SECRET", ""),
-		DBPath:    env("DB_PATH", defaultDBPath()),
+		DBPath:    env("DB_PATH", "data/forwardz.db"),
 		LogDir:    env("LOG_DIR", "logs"),
 		WebDir:    env("WEB_DIR", ""),
 	}
@@ -107,7 +107,6 @@ func main() {
 
 	initSetupState()
 	ensurePanelFingerprint()
-	migrateBranding()
 	backfillDailyFlow()
 	startTasks()
 	go backupScheduler()

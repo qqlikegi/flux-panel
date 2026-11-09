@@ -202,7 +202,7 @@ func tunnelCreate(c *Ctx) any {
 	}
 	// 下发配置：任何一步失败都整体回滚（删除已下发的 chain/service 和数据库记录）
 	var chainOK, serviceOK []int64
-	rollback := func(r *GostResult) R {
+	rollback := func(r *AgentResult) R {
 		rollbackCreateTunnel(tunnelID, chainOK, serviceOK)
 		return fail(r.Msg)
 	}
@@ -212,7 +212,7 @@ func tunnelCreate(c *Ctx) any {
 		if len(hops) > 0 {
 			next = hops[0]
 		}
-		if r := gostAddChains(in.NodeID, next, nodes); !r.ok() {
+		if r := agentAddChains(in.NodeID, next, nodes); !r.ok() {
 			return rollback(r)
 		}
 		chainOK = append(chainOK, in.NodeID)
@@ -224,11 +224,11 @@ func tunnelCreate(c *Ctx) any {
 			next = hops[i+1]
 		}
 		for _, ct := range hop {
-			if r := gostAddChains(ct.NodeID, next, nodes); !r.ok() {
+			if r := agentAddChains(ct.NodeID, next, nodes); !r.ok() {
 				return rollback(r)
 			}
 			chainOK = append(chainOK, ct.NodeID)
-			if r := gostAddChainService(ct.NodeID, ct, nodes); !r.ok() {
+			if r := agentAddChainService(ct.NodeID, ct, nodes); !r.ok() {
 				return rollback(r)
 			}
 			serviceOK = append(serviceOK, ct.NodeID)
@@ -236,7 +236,7 @@ func tunnelCreate(c *Ctx) any {
 	}
 	// 3. 出口节点：监听 Service
 	for _, out := range outNodes {
-		if r := gostAddChainService(out.NodeID, out, nodes); !r.ok() {
+		if r := agentAddChainService(out.NodeID, out, nodes); !r.ok() {
 			return rollback(r)
 		}
 		serviceOK = append(serviceOK, out.NodeID)
@@ -246,10 +246,10 @@ func tunnelCreate(c *Ctx) any {
 
 func rollbackCreateTunnel(tunnelID int64, chainNodes, serviceNodes []int64) {
 	for _, n := range chainNodes {
-		gostDeleteChains(n, fmt.Sprintf("chains_%d", tunnelID))
+		agentDeleteChains(n, fmt.Sprintf("chains_%d", tunnelID))
 	}
 	for _, n := range serviceNodes {
-		gostDeleteService(n, []string{fmt.Sprintf("%d_tls", tunnelID)})
+		agentDeleteService(n, []string{fmt.Sprintf("%d_tls", tunnelID)})
 	}
 	mustExec("DELETE FROM chain_tunnel WHERE tunnel_id = ?", tunnelID)
 	mustExec("DELETE FROM tunnel WHERE id = ?", tunnelID)
@@ -327,12 +327,12 @@ func deleteTunnelInternal(id int64) {
 	for _, ct := range listChains("WHERE tunnel_id = ?", id) {
 		switch ct.ChainType {
 		case 1:
-			gostDeleteChains(ct.NodeID, chainName)
+			agentDeleteChains(ct.NodeID, chainName)
 		case 2:
-			gostDeleteChains(ct.NodeID, chainName)
-			gostDeleteService(ct.NodeID, svc)
+			agentDeleteChains(ct.NodeID, chainName)
+			agentDeleteService(ct.NodeID, svc)
 		default:
-			gostDeleteService(ct.NodeID, svc)
+			agentDeleteService(ct.NodeID, svc)
 		}
 	}
 	mustExec("DELETE FROM chain_tunnel WHERE tunnel_id = ?", id)

@@ -26,14 +26,8 @@ SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 ENV_FILE="${INSTALL_DIR}/forwardz-panel.env"
 DB_FILE="${INSTALL_DIR}/data/forwardz.db"
 
-# 改名前（flux-panel）的安装位置：安装 / 更新时自动迁移
-LEGACY_DIR="/opt/flux-panel"
-LEGACY_SERVICE="flux-panel"
 RELEASE_URL="https://github.com/${REPO}/releases/latest/download"
 DEFAULT_PORT=6365
-
-# 旧版 Docker 部署的数据卷位置（用于迁移数据）
-DOCKER_DB="/var/lib/docker/volumes/sqlite_data/_data/gost.db"
 
 GH_PROXY=""
 COUNTRY=$(curl -s --max-time 5 https://ipinfo.io/country 2>/dev/null)
@@ -94,59 +88,6 @@ current_db() {
   local p
   p=$(grep -E '^DB_PATH=' "$ENV_FILE" 2>/dev/null | cut -d= -f2-)
   echo "${p:-$DB_FILE}"
-}
-
-# 旧版 flux-panel 的安装（/opt/flux-panel + flux-panel.service）迁移为 ForwardZ：
-# 数据库、日志、端口和 JWT 密钥原样保留，旧服务停止并删除
-legacy_panel_installed() {
-  [[ -f "/etc/systemd/system/${LEGACY_SERVICE}.service" || -x "${LEGACY_DIR}/flux-panel" ]]
-}
-
-migrate_legacy_panel() {
-  legacy_panel_installed || return 0
-  if is_installed; then
-    echo "⚠️ 同时存在旧版 ${LEGACY_DIR} 和新版 ${INSTALL_DIR}，跳过迁移，旧版请手动处理"
-    return 0
-  fi
-  echo "♻️ 检测到旧版面板 ${LEGACY_DIR}，迁移为 ForwardZ（数据、端口、登录状态均保留）..."
-  local old_env="${LEGACY_DIR}/flux-panel.env" port secret old_db
-  port=$(grep -E '^SERVER_PORT=' "$old_env" 2>/dev/null | cut -d= -f2)
-  secret=$(grep -E '^JWT_SECRET=' "$old_env" 2>/dev/null | cut -d= -f2-)
-  old_db=$(grep -E '^DB_PATH=' "$old_env" 2>/dev/null | cut -d= -f2-)
-  old_db="${old_db:-${LEGACY_DIR}/data/gost.db}"
-
-  systemctl stop "$LEGACY_SERVICE" 2>/dev/null
-  systemctl disable "$LEGACY_SERVICE" >/dev/null 2>&1
-  rm -f "/etc/systemd/system/${LEGACY_SERVICE}.service"
-
-  mkdir -p "${INSTALL_DIR}/data" "${INSTALL_DIR}/logs"
-  if [[ -d "${LEGACY_DIR}/data" ]]; then
-    cp -a "${LEGACY_DIR}/data/." "${INSTALL_DIR}/data/"
-  fi
-  if [[ -d "${LEGACY_DIR}/logs" ]]; then
-    cp -a "${LEGACY_DIR}/logs/." "${INSTALL_DIR}/logs/" 2>/dev/null
-  fi
-  # 数据库改名为 forwardz.db（连同 WAL 文件）
-  local base
-  base=$(basename "$old_db")
-  if [[ -f "${INSTALL_DIR}/data/${base}" && ! -f "$DB_FILE" ]]; then
-    for ext in "" -wal -shm; do
-      [[ -f "${INSTALL_DIR}/data/${base}${ext}" ]] && mv -f "${INSTALL_DIR}/data/${base}${ext}" "${DB_FILE}${ext}"
-    done
-  fi
-  # 旧版自定义了 DB_PATH（不在 ${LEGACY_DIR}/data 下）时直接复制过来
-  if [[ ! -f "$DB_FILE" && -f "$old_db" ]]; then
-    for ext in "" -wal -shm; do
-      [[ -f "${old_db}${ext}" ]] && cp -f "${old_db}${ext}" "${DB_FILE}${ext}"
-    done
-  fi
-  [[ -x "${LEGACY_DIR}/flux-panel" ]] && cp -f "${LEGACY_DIR}/flux-panel" "${INSTALL_DIR}/${BIN_NAME}"
-
-  write_env "${port:-$DEFAULT_PORT}" "${secret:-$(generate_secret)}"
-  write_service
-  systemctl enable "$SERVICE_NAME" >/dev/null 2>&1
-  rm -rf "$LEGACY_DIR"
-  echo "✅ 已迁移到 ${INSTALL_DIR}，服务名改为 ${SERVICE_NAME}"
 }
 
 port_in_use() {
@@ -254,46 +195,6 @@ EOF
 }
 
 # ---------------------------------------------------------------------
-# 从旧版 Docker 部署迁移
-# ---------------------------------------------------------------------
-stop_old_docker_panel() {
-  command -v docker >/dev/null 2>&1 || return 0
-  local found=()
-  for c in vite-frontend springboot-backend gost-mysql; do
-    if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$c"; then
-      found+=("$c")
-    fi
-  done
-  [[ ${#found[@]} -eq 0 ]] && return 0
-
-  echo "🔍 检测到旧版 Docker 部署的容器: ${found[*]}"
-  echo "   它们会占用面板端口，需要先停止并删除（数据卷会保留）。"
-  read -p "是否停止并删除这些容器？(Y/n): " ans
-  if [[ "$ans" == "n" || "$ans" == "N" ]]; then
-    echo "⚠️ 已跳过，如端口冲突请手动停止旧容器"
-    return 0
-  fi
-  docker stop "${found[@]}" >/dev/null 2>&1
-  docker rm "${found[@]}" >/dev/null 2>&1
-  echo "✅ 旧容器已停止并删除"
-}
-
-migrate_docker_data() {
-  [[ -f "$DB_FILE" ]] && return 0
-  [[ -f "$DOCKER_DB" ]] || return 0
-  echo "🔍 检测到旧版 Docker 部署的数据库: $DOCKER_DB"
-  read -p "是否迁移旧数据（用户、节点、隧道、转发等）？(Y/n): " ans
-  if [[ "$ans" == "n" || "$ans" == "N" ]]; then
-    return 0
-  fi
-  cp -f "$DOCKER_DB" "$DB_FILE"
-  for ext in -wal -shm; do
-    [[ -f "${DOCKER_DB}${ext}" ]] && cp -f "${DOCKER_DB}${ext}" "${DB_FILE}${ext}"
-  done
-  echo "✅ 旧数据已迁移"
-}
-
-# ---------------------------------------------------------------------
 # zf 快捷管理菜单（与节点端共用 /usr/local/bin/zf）
 # ---------------------------------------------------------------------
 ZF_BIN="/usr/local/bin/zf"
@@ -320,7 +221,7 @@ install_zf() {
 # 本机没有面板也没有节点端时删除 zf
 cleanup_zf() {
   local f
-  for f in /etc/systemd/system/forwardz_agent*.service /etc/systemd/system/flux_agent*.service; do
+  for f in /etc/systemd/system/forwardz_agent*.service; do
     [[ -f "$f" ]] && return 0
   done
   rm -f "$ZF_BIN"
@@ -333,18 +234,10 @@ install_panel() {
   require_root
   check_deps
 
-  if legacy_panel_installed && ! is_installed; then
-    migrate_legacy_panel
-    echo "🔄 继续更新到最新版本..."
-    update_panel
-    return $?
-  fi
   if is_installed; then
     echo "⚠️ 面板已安装在 ${INSTALL_DIR}，如需升级请选择“更新面板”"
     return 1
   fi
-
-  stop_old_docker_panel
 
   local port="$PANEL_PORT"
   if [[ -z "$port" ]]; then
@@ -366,8 +259,6 @@ install_panel() {
   local bin
   bin=$(fetch_panel_binary) || return 1
   mv -f "$bin" "${INSTALL_DIR}/${BIN_NAME}"
-
-  migrate_docker_data
 
   write_env "$port" "$(generate_secret)"
   write_service
@@ -394,7 +285,6 @@ install_panel() {
 update_panel() {
   require_root
   check_deps
-  migrate_legacy_panel
 
   if ! is_installed; then
     echo "❌ 面板未安装，请先选择安装"

@@ -5,8 +5,7 @@
 #
 #  由 panel_install.sh 和 install.sh 安装到 /usr/local/bin/zf，SSH 里输入 zf 打开。
 #  自动找出本机的面板（forwardz-panel.service）和全部节点端实例（forwardz_agent*.service），
-#  有多个时先列出来让你选择要管理哪一个。改名前的旧版（flux-panel / flux_agent*）也能管理，
-#  执行“更新到最新版”时会自动迁移为 ForwardZ 命名。
+#  有多个时先列出来让你选择要管理哪一个。
 # =====================================================================
 
 REPO="qqlikegi/forwardz"
@@ -15,13 +14,12 @@ SYSTEMD_DIR="${FORWARDZ_SYSTEMD_DIR:-/etc/systemd/system}"
 AGENT_ROOT="${FORWARDZ_AGENT_ROOT:-/etc}"   # 节点端实例目录的上级目录（仅测试时覆盖）
 ZF_BIN="/usr/local/bin/zf"
 
-NEW_PANEL_DIR="${FORWARDZ_PANEL_DIR:-/opt/forwardz-panel}"
-NEW_PANEL_SVC="forwardz-panel"
-LEGACY_PANEL_DIR="${FORWARDZ_LEGACY_PANEL_DIR:-/opt/flux-panel}"
-LEGACY_PANEL_SVC="flux-panel"
+PANEL_DIR="${FORWARDZ_PANEL_DIR:-/opt/forwardz-panel}"
+PANEL_UNIT="forwardz-panel"
+PANEL_BIN="${PANEL_DIR}/forwardz-panel"
+PANEL_ENV="${PANEL_DIR}/forwardz-panel.env"
 
 AGENT_PREFIX="forwardz_agent"
-LEGACY_AGENT_PREFIX="flux_agent"
 CONF_NAME="forwardz.json"
 
 if [[ $EUID -ne 0 ]]; then
@@ -139,38 +137,28 @@ cleanup_zf() {
 # ---------------------------------------------------------------------
 # 发现本机服务
 # ---------------------------------------------------------------------
-# detect_panel 设置面板相关变量；新版优先，没有时识别旧版 flux-panel
+# detect_panel 本机装了面板时 PANEL_SVC 为服务名，否则为空
 detect_panel() {
-  PANEL_SVC="" PANEL_DIR="" PANEL_BIN="" PANEL_ENV="" PANEL_LEGACY=0
-  if [[ -f "$SYSTEMD_DIR/${NEW_PANEL_SVC}.service" || -x "${NEW_PANEL_DIR}/forwardz-panel" ]]; then
-    PANEL_SVC="$NEW_PANEL_SVC"
-    PANEL_DIR="$NEW_PANEL_DIR"
-    PANEL_BIN="${NEW_PANEL_DIR}/forwardz-panel"
-    PANEL_ENV="${NEW_PANEL_DIR}/forwardz-panel.env"
-  elif [[ -f "$SYSTEMD_DIR/${LEGACY_PANEL_SVC}.service" || -x "${LEGACY_PANEL_DIR}/flux-panel" ]]; then
-    PANEL_SVC="$LEGACY_PANEL_SVC"
-    PANEL_DIR="$LEGACY_PANEL_DIR"
-    PANEL_BIN="${LEGACY_PANEL_DIR}/flux-panel"
-    PANEL_ENV="${LEGACY_PANEL_DIR}/flux-panel.env"
-    PANEL_LEGACY=1
+  PANEL_SVC=""
+  if [[ -f "$SYSTEMD_DIR/${PANEL_UNIT}.service" || -x "$PANEL_BIN" ]]; then
+    PANEL_SVC="$PANEL_UNIT"
   fi
 }
 
 is_agent_name() { [[ "$1" =~ ^${AGENT_PREFIX}([0-9]+|_[A-Za-z0-9_-]+)?$ ]]; }
-is_legacy_agent() { [[ "$1" =~ ^${LEGACY_AGENT_PREFIX}[A-Za-z0-9_-]*$ ]]; }
 
 list_agents() {
   local f name
   {
-    for f in "$SYSTEMD_DIR"/${AGENT_PREFIX}*.service "$SYSTEMD_DIR"/${LEGACY_AGENT_PREFIX}*.service; do
+    for f in "$SYSTEMD_DIR"/${AGENT_PREFIX}*.service; do
       [[ -f "$f" ]] || continue
       name=$(basename "$f" .service)
-      { is_agent_name "$name" || is_legacy_agent "$name"; } && echo "$name"
+      is_agent_name "$name" && echo "$name"
     done
-    for f in "$AGENT_ROOT"/${AGENT_PREFIX}*/config.json "$AGENT_ROOT"/${LEGACY_AGENT_PREFIX}*/config.json; do
+    for f in "$AGENT_ROOT"/${AGENT_PREFIX}*/config.json; do
       [[ -f "$f" ]] || continue
       name=$(basename "$(dirname "$f")")
-      { is_agent_name "$name" || is_legacy_agent "$name"; } && echo "$name"
+      is_agent_name "$name" && echo "$name"
     done
   } | sort -u
 }
@@ -181,26 +169,10 @@ agent_conf() {
 agent_addr() { agent_conf "$1" addr; }
 agent_fp() { local f; f=$(agent_conf "$1" fingerprint); echo "${f:--}"; }
 
-agent_bin() {
-  if is_legacy_agent "$1"; then echo "$AGENT_ROOT/$1/flux_agent"; else echo "$AGENT_ROOT/$1/$AGENT_PREFIX"; fi
-}
+agent_bin() { echo "$AGENT_ROOT/$1/$AGENT_PREFIX"; }
 
-# 实例的转发配置文件（旧版程序用 gost.json）
-agent_conf_file() {
-  if [[ -f "$AGENT_ROOT/$1/$CONF_NAME" ]]; then echo "$AGENT_ROOT/$1/$CONF_NAME"; else echo "$AGENT_ROOT/$1/gost.json"; fi
-}
-
-agent_exists() { [[ -f "$SYSTEMD_DIR/$1.service" || -d "$AGENT_ROOT/$1" ]]; }
-
-first_free_agent() {
-  if ! agent_exists "$AGENT_PREFIX"; then
-    echo "$AGENT_PREFIX"
-    return
-  fi
-  local i=2
-  while agent_exists "${AGENT_PREFIX}${i}"; do i=$((i + 1)); done
-  echo "${AGENT_PREFIX}${i}"
-}
+# 实例的转发配置文件
+agent_conf_file() { echo "$AGENT_ROOT/$1/$CONF_NAME"; }
 
 # ---------------------------------------------------------------------
 # 面板
@@ -212,11 +184,7 @@ panel_env_get() {
 panel_db() {
   local p
   p=$(panel_env_get DB_PATH)
-  if [[ -z "$p" ]]; then
-    p="${PANEL_DIR}/data/forwardz.db"
-    [[ -f "$p" ]] || p="${PANEL_DIR}/data/gost.db"
-  fi
-  echo "$p"
+  echo "${p:-${PANEL_DIR}/data/forwardz.db}"
 }
 
 panel_bin_supports() {
@@ -241,7 +209,7 @@ panel_update() {
     rm -f "$tmp"
     return 1
   fi
-  bash "$tmp" update   # 旧版 flux-panel 会在这一步自动迁移为 forwardz-panel
+  bash "$tmp" update
   rm -f "$tmp"
   detect_panel
   update_zf
@@ -321,7 +289,6 @@ panel_menu() {
     echo "==============================================="
     echo "  版本: $("$PANEL_BIN" -v 2>/dev/null | awk '{print $2}')    状态: $(svc_state "$PANEL_SVC")    端口: $(panel_env_get SERVER_PORT)"
     echo "  面板指纹: $(panel_fp)（系统配置里可查看和修改）"
-    [[ $PANEL_LEGACY -eq 1 ]] && echo "  ⚠️ 这是改名前的旧版 flux-panel，选择 1 更新后会自动迁移为 forwardz-panel"
     echo "-----------------------------------------------"
     echo "  1. 更新到最新版（GitHub）"
     echo "  2. 启动"
@@ -353,57 +320,8 @@ panel_menu() {
 # ---------------------------------------------------------------------
 # 节点端实例
 # ---------------------------------------------------------------------
-write_agent_unit() {
-  local name="$1" dir="$AGENT_ROOT/$1" addr fp
-  addr=$(agent_addr "$name")
-  fp=$(agent_conf "$name" fingerprint)
-  cat > "$SYSTEMD_DIR/${name}.service" <<EOF
-[Unit]
-Description=ForwardZ Agent (${name}, panel ${addr}${fp:+, fingerprint ${fp}})
-After=network.target
-
-[Service]
-WorkingDirectory=$dir
-ExecStart=$dir/$AGENT_PREFIX
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-EOF
-}
-
-# 旧版实例迁移为新命名，新实例名输出到 $MIGRATED
-migrate_legacy_agent() {
-  local old="$1" new odir="$AGENT_ROOT/$1" ndir
-  new=$(first_free_agent)
-  ndir="$AGENT_ROOT/$new"
-  echo "♻️ 迁移旧版实例 ${old} → ${new}"
-  systemctl stop "$old" 2>/dev/null
-  systemctl disable "$old" >/dev/null 2>&1
-  rm -f "$SYSTEMD_DIR/${old}.service"
-  mkdir -p "$ndir"
-  [[ -f "$odir/config.json" ]] && mv -f "$odir/config.json" "$ndir/config.json"
-  if [[ -f "$odir/$CONF_NAME" ]]; then
-    mv -f "$odir/$CONF_NAME" "$ndir/$CONF_NAME"
-  elif [[ -f "$odir/gost.json" ]]; then
-    mv -f "$odir/gost.json" "$ndir/$CONF_NAME"
-  fi
-  [[ -f "$odir/device.id" ]] && mv -f "$odir/device.id" "$ndir/device.id"
-  [[ -f "$odir/flux_agent" ]] && mv -f "$odir/flux_agent" "$ndir/$AGENT_PREFIX"
-  [[ -n "$old" && -d "$odir" ]] && rm -rf "$odir"
-  write_agent_unit "$new"
-  systemctl daemon-reload
-  systemctl enable "$new" >/dev/null 2>&1
-  MIGRATED="$new"
-}
-
 agent_update_one() {
   local name="$1" bin="$2"
-  if is_legacy_agent "$name"; then
-    migrate_legacy_agent "$name"
-    [[ "$name" == "$CURRENT_AGENT" ]] && CURRENT_AGENT="$MIGRATED"
-    name="$MIGRATED"
-  fi
   local exe="$AGENT_ROOT/$name/$AGENT_PREFIX"
   echo "🔄 更新实例 ${name} ..."
   [[ -f "$exe" ]] && cp -f "$exe" "$exe.bak"
@@ -510,7 +428,6 @@ agent_menu() {
     echo "==============================================="
     echo "  面板: $(agent_addr "$name")    指纹: $(agent_fp "$name")    状态: $(svc_state "$name")"
     echo "  目录: $AGENT_ROOT/${name}    版本: $("$(agent_bin "$name")" -V 2>/dev/null | head -n1)"
-    is_legacy_agent "$name" && echo "  ⚠️ 这是改名前的旧版实例，选择 1 更新后会自动迁移为 forwardz_agent 命名"
     echo "-----------------------------------------------"
     echo "  1. 更新到最新版（GitHub）"
     echo "  2. 启动"
@@ -544,20 +461,16 @@ agent_menu() {
 # ---------------------------------------------------------------------
 main() {
   while true; do
-    local targets=() labels=() agents=() n tag
+    local targets=() labels=() agents=() n
     detect_panel
     if [[ -n "$PANEL_SVC" ]]; then
-      tag=""
-      [[ $PANEL_LEGACY -eq 1 ]] && tag="（旧版）"
       targets+=("panel")
-      labels+=("$(printf '%-24s 状态: %-10s 指纹: %-9s 端口: %s' "面板 ${PANEL_SVC}${tag}" "$(svc_state "$PANEL_SVC")" "$(panel_fp)" "$(panel_env_get SERVER_PORT)")")
+      labels+=("$(printf '%-24s 状态: %-10s 指纹: %-9s 端口: %s' "面板 ${PANEL_SVC}" "$(svc_state "$PANEL_SVC")" "$(panel_fp)" "$(panel_env_get SERVER_PORT)")")
     fi
     mapfile -t agents < <(list_agents)
     for n in "${agents[@]}"; do
-      tag=""
-      is_legacy_agent "$n" && tag="（旧版）"
       targets+=("$n")
-      labels+=("$(printf '%-24s 状态: %-10s 指纹: %-9s 面板: %s' "节点 ${n}${tag}" "$(svc_state "$n")" "$(agent_fp "$n")" "$(agent_addr "$n")")")
+      labels+=("$(printf '%-24s 状态: %-10s 指纹: %-9s 面板: %s' "节点 ${n}" "$(svc_state "$n")" "$(agent_fp "$n")" "$(agent_addr "$n")")")
     done
 
     if [[ ${#targets[@]} -eq 0 ]]; then

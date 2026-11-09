@@ -9,7 +9,7 @@ import (
 
 func TestBackupAndExportRoundTrip(t *testing.T) {
 	dir := t.TempDir()
-	if err := openDB(filepath.Join(dir, "gost.db")); err != nil {
+	if err := openDB(filepath.Join(dir, "forwardz.db")); err != nil {
 		t.Fatal(err)
 	}
 	defer closeDB()

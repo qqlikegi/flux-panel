@@ -26,12 +26,12 @@ func TestAWSEncode(t *testing.T) {
 	}
 }
 
-func TestBackupTimeOrdersLegacyAndNew(t *testing.T) {
+func TestBackupTimeOrder(t *testing.T) {
 	keys := []string{
 		"dir/forwardz-panel-backup-20261110-030000.db.gz",
-		"dir/flux-panel-backup-20261108-030000.db.gz",
+		"dir/forwardz-panel-backup-20261108-030000.db.gz",
 		"dir/forwardz-panel-backup-20261109-150000.db.gz",
-		"flux-panel-backup-20261109-030000.db.gz",
+		"forwardz-panel-backup-20261109-030000.db.gz",
 	}
 	want := []string{keys[1], keys[3], keys[2], keys[0]}
 	sorted := append([]string(nil), keys...)

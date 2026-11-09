@@ -117,7 +117,7 @@ func pauseForwards(list []*Forward) {
 	for _, f := range list {
 		name := serviceName(f.ID, f.UserID, getUserTunnel(f.UserID, f.TunnelID))
 		for _, ct := range entryChains(f.TunnelID) {
-			gostPauseResume(ct.NodeID, name, "PauseService")
+			agentPauseResume(ct.NodeID, name, "PauseService")
 		}
 		mustExec("UPDATE forward SET status = 0 WHERE id = ?", f.ID)
 	}

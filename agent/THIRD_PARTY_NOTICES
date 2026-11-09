@@ -1,0 +1,39 @@
+THIRD-PARTY NOTICES — ForwardZ Agent
+
+Portions of ForwardZ Agent are derived from the following open-source
+projects, all distributed under the MIT License. Their copyright notices
+and the license text are reproduced below as required.
+
+  - ForwardZ Agent core (agent/, agent/x/)
+      derived from github.com/go-gost/gost and github.com/go-gost/x v3.1.0
+      Copyright (c) 2016 ginuerzh
+  - agent/x/lib/core          from github.com/go-gost/core v0.3.1           Copyright (c) 2016 ginuerzh
+  - agent/x/lib/plugin        from github.com/go-gost/plugin v0.2.0         Copyright (c) 2016 ginuerzh
+  - agent/x/lib/relay         from github.com/go-gost/relay v0.5.0          Copyright (c) 2016 ginuerzh
+  - agent/x/lib/gosocks4      from github.com/go-gost/gosocks4 v0.0.1       Copyright (c) 2017 ginuerzh
+  - agent/x/lib/tls-dissector from github.com/go-gost/tls-dissector v0.1.1  Copyright (c) 2017 ginuerzh
+  - agent/x/lib/gosocks5      from github.com/go-gost/gosocks5 v0.4.2       Copyright (c) 2014 郑锐
+
+Modifications are part of ForwardZ.
+
+-------------------------------------------------------------------------------
+MIT License
+
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -280,9 +280,6 @@ type backupConfig struct {
 
 const backupFilePrefix = "forwardz-panel-backup-"
 
-// legacyBackupFilePrefix 改名前（flux-panel）的备份文件前缀，仍参与列表展示和滚动清理
-const legacyBackupFilePrefix = "flux-panel-backup-"
-
 func loadBackupConfig() backupConfig {
 	c := backupConfig{
 		Enabled:   getSetting("backup_enabled") == "true",
@@ -330,21 +327,15 @@ func (c backupConfig) dir() string {
 // backupTime 备份文件名里的时间部分（去掉目录和前缀），用来按时间排序
 func backupTime(key string) string {
 	key = key[strings.LastIndex(key, "/")+1:]
-	key = strings.TrimPrefix(key, backupFilePrefix)
-	return strings.TrimPrefix(key, legacyBackupFilePrefix)
+	return strings.TrimPrefix(key, backupFilePrefix)
 }
 
-// listBackups 列出新旧两种前缀的全部备份，按时间从旧到新排序
+// listBackups 列出全部备份，按时间从旧到新排序
 func (c backupConfig) listBackups(cl *s3Client) ([]s3Object, error) {
 	objs, err := cl.list(c.keyPrefix())
 	if err != nil {
 		return nil, err
 	}
-	old, err := cl.list(c.dir() + legacyBackupFilePrefix)
-	if err != nil {
-		return nil, err
-	}
-	objs = append(objs, old...)
 	sort.Slice(objs, func(i, j int) bool { return backupTime(objs[i].Key) < backupTime(objs[j].Key) })
 	return objs, nil
 }

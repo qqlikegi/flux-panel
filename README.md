@@ -2,8 +2,8 @@
 
 ForwardZ 是一套开源的流量转发管理系统，由 **ForwardZ Panel（面板）** 和 **ForwardZ Agent（节点端）** 组成。
 
-- 面板基于 [flux-panel](https://github.com/bqlpfy/flux-panel)（Apache License 2.0）二次开发，Go 单文件，内置前端；
-- 节点端基于 [GOST v3.1.0](https://github.com/go-gost/gost)（[go-gost/x](https://github.com/go-gost/x)，MIT License）深度修改，程序名、服务名、配置文件、协议标识均已独立，可与本机其他 gost 程序共存，互不冲突。
+- 面板：Go 单文件，前端页面内置，SQLite 数据库，网页 / 接口 / 节点通信共用一个端口；
+- 节点端：独立的转发程序，程序名、服务名、配置文件、协议标识均为 ForwardZ 自有，可与本机其他转发程序共存，互不冲突。
 
 ---
 ## 特性
@@ -18,10 +18,10 @@ ForwardZ 是一套开源的流量转发管理系统，由 **ForwardZ Panel（面
 
 ## 部署流程
 ---
-ForwardZ 基于 flux-panel 2.0.7 开发版二次开发，**不再使用 Docker，也不需要 Java**：
+**无需 Docker，也不需要 Java**：
 
 - **面板**：Go 编写的单个二进制文件，前端页面已内置，数据库为内置 SQLite，网页 / 接口 / 节点通信共用一个端口，由 systemd 管理。
-- **节点端**：ForwardZ Agent 单个二进制文件（基于 GOST 3.1.0 修改），由 systemd 管理，`forwardz_agent -V` 查看版本。
+- **节点端**：ForwardZ Agent 单个二进制文件，由 systemd 管理，`forwardz_agent -V` 查看版本。
 - 支持 Linux **amd64 / arm64**，二进制从本仓库 [Releases](https://github.com/qqlikegi/forwardz/releases) 下载。
 
 ### 安装面板
@@ -40,7 +40,6 @@ curl -L https://raw.githubusercontent.com/qqlikegi/forwardz/main/panel_install.s
 - 安装目录：`/opt/forwardz-panel`（程序 `forwardz-panel`，数据库 `data/forwardz.db`，日志 `logs/`）
 - 配置文件：`/opt/forwardz-panel/forwardz-panel.env`（端口、JWT 密钥等，修改后 `systemctl restart forwardz-panel`）
 - 查看日志：`journalctl -u forwardz-panel -f`
-- 从旧版 Docker 部署升级：安装时会自动检测旧容器和旧数据库，按提示迁移即可，数据库结构完全兼容。
 
 ### 安装节点端
 1. 登录面板，在「系统配置」里把面板地址设置为 `面板公网IP:端口`；
@@ -52,7 +51,7 @@ curl -L https://raw.githubusercontent.com/qqlikegi/forwardz/main/panel_install.s
 |---|---|
 | 本机没有节点端 | 全新安装 |
 | 某个实例的面板指纹相同 | 同一个面板：覆盖更新该实例，保留转发配置 |
-| 某个实例的节点密钥相同 | 同一个节点（面板改过指纹 / 地址，或旧版装的实例）：覆盖更新并写入新指纹 |
+| 某个实例的节点密钥相同 | 同一个节点（面板改过指纹 / 地址，或没带指纹安装的实例）：覆盖更新并写入新指纹 |
 | 都对不上 | 另一个面板：询问 `1` 共存安装（默认，可自定义名称，例如输入 `b` 得到 `forwardz_agent_b`）/ `2` 覆盖已有实例 / `3` 取消 |
 
 每个实例的服务名统一以 `forwardz_agent` 开头（第一个为 `forwardz_agent`，之后 `forwardz_agent2`…），目录为 `/etc/<实例名>`，程序为 `/etc/<实例名>/forwardz_agent`，面板下发的转发配置为 `forwardz.json`，也可以用 `-n 名称` 直接指定实例。注意：
@@ -71,19 +70,12 @@ curl -L https://raw.githubusercontent.com/qqlikegi/forwardz/main/panel_install.s
 
 面板程序本身也支持命令行备份：`forwardz-panel -backup /root/a.db`、`forwardz-panel -export /root/a.sql`、`forwardz-panel -fingerprint`（需先加载 `forwardz-panel.env` 中的 `DB_PATH`）。
 
-### 从 flux-panel 升级到 ForwardZ
-无需手动操作，旧数据全部保留：
-
-- **面板**：在旧机器上运行新版 `panel_install.sh update`（或 `zf` → 更新到最新版），会自动把 `/opt/flux-panel` 迁移到 `/opt/forwardz-panel`，服务 `flux-panel` 换成 `forwardz-panel`，数据库改名为 `forwardz.db`，端口和 JWT 密钥保持不变；
-- **节点端**：重新执行面板里的安装命令，或 `zf` → 更新到最新版，旧实例 `flux_agent*` 会自动迁移为 `forwardz_agent*`，连接配置、设备 ID 和转发配置（`gost.json` → `forwardz.json`）都会带过去；
-- 云存储里旧的 `flux-panel-backup-*` 备份文件仍会被识别、列出和轮转。
-
 ### 手动运行（不用脚本）
 ```bash
 chmod +x forwardz-panel-amd64
 SERVER_PORT=6365 DB_PATH=./data/forwardz.db ./forwardz-panel-amd64
 ```
-可用环境变量：`SERVER_PORT`（默认 6365）、`DB_PATH`（默认 `data/forwardz.db`，旧的 `data/gost.db` 存在时自动沿用）、`LOG_DIR`（默认 `logs`）、`JWT_SECRET`（不填则自动生成并保存在数据库同目录的 `jwt.secret`）。
+可用环境变量：`SERVER_PORT`（默认 6365）、`DB_PATH`（默认 `data/forwardz.db`）、`LOG_DIR`（默认 `logs`）、`JWT_SECRET`（不填则自动生成并保存在数据库同目录的 `jwt.secret`）。
 
 ### 从源码构建
 ```bash
@@ -96,7 +88,6 @@ cd ../agent && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags
 #### 管理员账号
 
 全新安装后第一次打开面板，会要求先设置管理员用户名和密码（复杂度不限），确定后直接进入面板。
-从旧版本升级的面板如果还在用默认账号 `admin_user / admin_user`，打开时同样会要求重新设置。
 
 #### 二开新增功能
 
@@ -134,6 +125,5 @@ cd ../agent && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags
 ---
 ## 许可证与致谢
 
-- ForwardZ 面板部分沿用 flux-panel 的 [Apache License 2.0](./LICENSE)，感谢原作者 [bqlpfy/flux-panel](https://github.com/bqlpfy/flux-panel)；
-- ForwardZ Agent 基于 GOST v3.1.0 修改，原版权声明见 [agent/LICENSE-gost](./agent/LICENSE-gost)（MIT License, Copyright (c) 2016 ginuerzh），感谢 [go-gost](https://github.com/go-gost) 项目；
-- 上游模块 go-gost/core、relay、gosocks4、gosocks5、plugin、tls-dissector（MIT License）已内置到 `agent/x/lib/` 并改为 ForwardZ 自己的包路径，各自的原版权声明保留在对应目录的 `LICENSE-go-gost-*` 文件中。
+- ForwardZ 以 [Apache License 2.0](./LICENSE) 开源；面板部分源自 [bqlpfy/flux-panel](https://github.com/bqlpfy/flux-panel)，感谢原作者；
+- 节点端部分代码源自 MIT 许可的开源项目，原版权声明见 [agent/THIRD_PARTY_NOTICES](./agent/THIRD_PARTY_NOTICES)。

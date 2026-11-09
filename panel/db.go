@@ -12,7 +12,7 @@ import (
 	_ "modernc.org/sqlite"
 )
 
-// 表结构与 Java 版完全一致，可以直接沿用旧版的 gost.db
+// 表结构与 Java 版完全一致
 //
 //go:embed sql/schema.sql
 var schemaSQL string

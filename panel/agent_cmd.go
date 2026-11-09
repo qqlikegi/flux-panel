@@ -6,11 +6,11 @@ import (
 	"strings"
 )
 
-// 下发给节点端（gost）的配置，名称规则与 Java 版保持一致：
+// 下发给节点端的配置，名称规则与 Java 版保持一致：
 //   转发服务  {forwardId}_{userId}_{userTunnelId}_{tcp|udp}
 //   隧道服务  {tunnelId}_tls      转发链  chains_{tunnelId}      限速器  {speedLimitId}
 
-func okIf(r *GostResult, contains string) *GostResult {
+func okIf(r *AgentResult, contains string) *AgentResult {
 	if strings.Contains(r.Msg, contains) {
 		r.Msg = "OK"
 	}
@@ -24,15 +24,15 @@ func limiterData(name int64, speed string) map[string]any {
 	}
 }
 
-func gostAddLimiter(nodeID, name int64, speed string) *GostResult {
+func agentAddLimiter(nodeID, name int64, speed string) *AgentResult {
 	return okIf(sendMsg(nodeID, limiterData(name, speed), "AddLimiters"), "exists")
 }
 
-func gostUpdateLimiter(nodeID, name int64, speed string) *GostResult {
+func agentUpdateLimiter(nodeID, name int64, speed string) *AgentResult {
 	return sendMsg(nodeID, map[string]any{"limiter": strconv.FormatInt(name, 10), "data": limiterData(name, speed)}, "UpdateLimiters")
 }
 
-func gostDeleteLimiter(nodeID, name int64) *GostResult {
+func agentDeleteLimiter(nodeID, name int64) *AgentResult {
 	return okIf(sendMsg(nodeID, map[string]any{"limiter": strconv.FormatInt(name, 10)}, "DeleteLimiters"), "not found")
 }
 
@@ -64,12 +64,12 @@ func chainData(nodeID int64, next []*ChainTunnel, nodes map[int64]*Node) map[str
 	return map[string]any{"name": fmt.Sprintf("chains_%d", first.TunnelID), "hops": []any{hop}}
 }
 
-// gostAddChains 在 nodeID 上创建转发链，指向下一跳的节点列表
-func gostAddChains(nodeID int64, next []*ChainTunnel, nodes map[int64]*Node) *GostResult {
+// agentAddChains 在 nodeID 上创建转发链，指向下一跳的节点列表
+func agentAddChains(nodeID int64, next []*ChainTunnel, nodes map[int64]*Node) *AgentResult {
 	return okIf(sendMsg(nodeID, chainData(nodeID, next, nodes), "AddChains"), "exists")
 }
 
-func gostDeleteChains(nodeID int64, name string) *GostResult {
+func agentDeleteChains(nodeID int64, name string) *AgentResult {
 	return okIf(sendMsg(nodeID, map[string]any{"chain": name}, "DeleteChains"), "not found")
 }
 
@@ -92,7 +92,7 @@ func chainServiceData(nodeID int64, ct *ChainTunnel, nodes map[int64]*Node) map[
 	return svc
 }
 
-func gostAddChainService(nodeID int64, ct *ChainTunnel, nodes map[int64]*Node) *GostResult {
+func agentAddChainService(nodeID int64, ct *ChainTunnel, nodes map[int64]*Node) *AgentResult {
 	return okIf(sendMsg(nodeID, []any{chainServiceData(nodeID, ct, nodes)}, "AddService"), "exists")
 }
 
@@ -130,8 +130,8 @@ func forwardServicesData(name string, limiter *int64, node *Node, f *Forward, po
 	return services
 }
 
-// gostAddOrUpdateService 入口节点上的转发服务（tcp + udp），method 为 AddService / UpdateService
-func gostAddOrUpdateService(name string, limiter *int64, node *Node, f *Forward, port int64, tunnel *Tunnel, method string) *GostResult {
+// agentAddOrUpdateService 入口节点上的转发服务（tcp + udp），method 为 AddService / UpdateService
+func agentAddOrUpdateService(name string, limiter *int64, node *Node, f *Forward, port int64, tunnel *Tunnel, method string) *AgentResult {
 	return okIf(sendMsg(node.ID, forwardServicesData(name, limiter, node, f, port, tunnel), method), "exists")
 }
 
@@ -149,14 +149,14 @@ func forwarderData(remoteAddr, strategy string) map[string]any {
 	}
 }
 
-func gostDeleteService(nodeID int64, services []string) *GostResult {
+func agentDeleteService(nodeID int64, services []string) *AgentResult {
 	return okIf(sendMsg(nodeID, map[string]any{"services": services}, "DeleteService"), "not found")
 }
 
 func forwardServiceNames(name string) []string { return []string{name + "_tcp", name + "_udp"} }
 
-// gostPauseResume method 为 PauseService / ResumeService
-func gostPauseResume(nodeID int64, name, method string) *GostResult {
+// agentPauseResume method 为 PauseService / ResumeService
+func agentPauseResume(nodeID int64, name, method string) *AgentResult {
 	return sendMsg(nodeID, map[string]any{"services": forwardServiceNames(name)}, method)
 }
 

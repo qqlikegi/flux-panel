@@ -177,7 +177,7 @@ func desiredStates(nodeIDs []int64) map[int64]*nodeState {
 	return states
 }
 
-// stateFromReport 把节点上报的 gost 配置转换为 nodeState
+// stateFromReport 把节点上报的转发配置转换为 nodeState
 func stateFromReport(raw []byte) (*nodeState, error) {
 	var cfg struct {
 		Limiters []map[string]any `json:"limiters"`
@@ -301,7 +301,7 @@ func sortedKeys[V any](m map[string]V) []string {
 func applyDiff(nodeID int64, have, want *nodeState) []string {
 	var errs []string
 	changed := 0
-	note := func(action, name string, r *GostResult) bool {
+	note := func(action, name string, r *AgentResult) bool {
 		changed++
 		if r.ok() {
 			return true
