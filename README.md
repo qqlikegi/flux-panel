@@ -26,26 +26,46 @@
 
 ## 部署流程
 ---
-### Docker Compose部署
-#### 快速部署
-面板端(稳定版)：
-```bash
-curl -L https://raw.githubusercontent.com/bqlpfy/flux-panel/refs/heads/main/panel_install.sh -o panel_install.sh && chmod +x panel_install.sh && ./panel_install.sh
-```
-节点端(稳定版)：
-```bash
-curl -L https://raw.githubusercontent.com/bqlpfy/flux-panel/refs/heads/main/install.sh -o install.sh && chmod +x install.sh && ./install.sh
+本分支基于 2.0.7 开发版二次开发，**不再使用 Docker，也不需要 Java**：
 
+- **面板**：Go 编写的单个二进制文件，前端页面已内置，数据库为内置 SQLite，网页 / 接口 / 节点通信共用一个端口，由 systemd 管理。
+- **节点端**：单个二进制文件（基于 gost），由 systemd 管理。
+- 支持 Linux **amd64 / arm64**，二进制从本仓库 [Releases](https://github.com/qqlikegi/flux-panel/releases) 下载。
+
+### 安装面板
+```bash
+curl -L https://raw.githubusercontent.com/qqlikegi/flux-panel/main/panel_install.sh -o panel_install.sh && chmod +x panel_install.sh && ./panel_install.sh
+```
+脚本菜单提供：安装 / 更新（失败自动回滚）/ 卸载 / 查看状态 / 重置管理员密码。也可以直接带参数运行：
+```bash
+./panel_install.sh install      # 安装（PANEL_PORT=6365 可跳过端口询问）
+./panel_install.sh update       # 更新到最新 Release
+./panel_install.sh status       # 查看状态
+./panel_install.sh reset-admin  # 忘记密码时重置为 admin_user / admin_user
+./panel_install.sh uninstall    # 卸载（可选择保留数据库）
 ```
 
-面板端(开发版)：
-```bash
-curl -L https://raw.githubusercontent.com/bqlpfy/flux-panel/refs/heads/beta/panel_install.sh -o panel_install.sh && chmod +x panel_install.sh && ./panel_install.sh
-```
-节点端(开发版)：
-```bash
-curl -L https://raw.githubusercontent.com/bqlpfy/flux-panel/refs/heads/beta/install.sh -o install.sh && chmod +x install.sh && ./install.sh
+- 安装目录：`/opt/flux-panel`（程序 `flux-panel`，数据库 `data/gost.db`，日志 `logs/`）
+- 配置文件：`/opt/flux-panel/flux-panel.env`（端口、JWT 密钥等，修改后 `systemctl restart flux-panel`）
+- 查看日志：`journalctl -u flux-panel -f`
+- 从旧版 Docker 部署升级：安装时会自动检测旧容器和旧数据库，按提示迁移即可，数据库结构完全兼容。
 
+### 安装节点端
+1. 登录面板，在「网站配置」里把面板地址设置为 `面板公网IP:端口`；
+2. 在「节点管理」新增节点，点击「安装」复制安装命令，到节点服务器上执行即可。
+
+### 手动运行（不用脚本）
+```bash
+chmod +x flux-panel-amd64
+SERVER_PORT=6365 DB_PATH=./data/gost.db ./flux-panel-amd64
+```
+可用环境变量：`SERVER_PORT`（默认 6365）、`DB_PATH`（默认 `data/gost.db`）、`LOG_DIR`（默认 `logs`）、`JWT_SECRET`（不填则自动生成并保存在数据库同目录的 `jwt.secret`）。
+
+### 从源码构建
+```bash
+cd vite-frontend && npm install --legacy-peer-deps && npm run build && cd ..
+rm -rf panel/web/dist && cp -r vite-frontend/dist panel/web/dist
+cd panel && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w" -o flux-panel-amd64 .
 ```
 
 #### 默认管理员账号

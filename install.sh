@@ -16,16 +16,19 @@ get_architecture() {
     esac
 }
 
+# 发布仓库（节点端二进制从该仓库最新 Release 下载）
+REPO="qqlikegi/flux-panel"
+
 # 构建下载地址
 build_download_url() {
     local ARCH=$(get_architecture)
-    echo "https://github.com/bqlpfy/flux-panel/releases/download/2.0.7-beta/gost-${ARCH}"
+    echo "https://github.com/${REPO}/releases/latest/download/gost-${ARCH}"
 }
 
 # 下载地址
 DOWNLOAD_URL=$(build_download_url)
 INSTALL_DIR="/etc/flux_agent"
-COUNTRY=$(curl -s https://ipinfo.io/country)
+COUNTRY=$(curl -s --max-time 5 https://ipinfo.io/country)
 if [ "$COUNTRY" = "CN" ]; then
     # 拼接 URL
     DOWNLOAD_URL="https://ghfast.top/${DOWNLOAD_URL}"
@@ -175,8 +178,14 @@ install_flux_agent() {
   [[ -f "$INSTALL_DIR/flux_agent" ]] && echo "🧹 删除旧文件 flux_agent" && rm -f "$INSTALL_DIR/flux_agent"
 
   # 下载 flux_agent
-  echo "⬇️ 下载 flux_agent 中..."
-  curl -L "$DOWNLOAD_URL" -o "$INSTALL_DIR/flux_agent"
+  if [[ -n "$AGENT_BINARY" ]]; then
+    # 使用本地二进制（离线安装 / CI 测试）
+    echo "📦 使用本地文件: $AGENT_BINARY"
+    cp -f "$AGENT_BINARY" "$INSTALL_DIR/flux_agent"
+  else
+    echo "⬇️ 下载 flux_agent 中..."
+    curl -fL "$DOWNLOAD_URL" -o "$INSTALL_DIR/flux_agent"
+  fi
   if [[ ! -f "$INSTALL_DIR/flux_agent" || ! -s "$INSTALL_DIR/flux_agent" ]]; then
     echo "❌ 下载失败，请检查网络或下载链接。"
     exit 1
@@ -260,7 +269,7 @@ update_flux_agent() {
   
   # 先下载新版本
   echo "⬇️ 下载最新版本..."
-  curl -L "$DOWNLOAD_URL" -o "$INSTALL_DIR/flux_agent.new"
+  curl -fL "$DOWNLOAD_URL" -o "$INSTALL_DIR/flux_agent.new"
   if [[ ! -f "$INSTALL_DIR/flux_agent.new" || ! -s "$INSTALL_DIR/flux_agent.new" ]]; then
     echo "❌ 下载失败。"
     return 1

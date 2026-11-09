@@ -1,357 +1,422 @@
 #!/bin/bash
-set -e
+# =====================================================================
+#  flux-panel 面板管理脚本（二进制部署，无需 Docker）
+#
+#  面板是一个单独的二进制文件（Go 编写，前端页面已内置），无需 Java / Docker / Nginx，
+#  由 systemd 管理，网页、接口、节点通信共用一个端口。
+#
+#  用法：
+#    ./panel_install.sh              交互式菜单
+#    ./panel_install.sh install      安装
+#    ./panel_install.sh update       更新到最新版本
+#    ./panel_install.sh uninstall    卸载
+#    ./panel_install.sh status       查看状态
+#
+#    ./panel_install.sh reset-admin  重置管理员账号密码为 admin_user / admin_user
+#
+#  离线安装：PANEL_BINARY=/path/to/flux-panel-amd64 ./panel_install.sh install
+#  非交互指定端口：PANEL_PORT=6365 ./panel_install.sh install
+# =====================================================================
 
-# 解决 macOS 下 tr 可能出现的非法字节序列问题
-export LANG=en_US.UTF-8
-export LC_ALL=C
+REPO="qqlikegi/flux-panel"
+INSTALL_DIR="/opt/flux-panel"
+SERVICE_NAME="flux-panel"
+SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
+ENV_FILE="${INSTALL_DIR}/flux-panel.env"
+RELEASE_URL="https://github.com/${REPO}/releases/latest/download"
+DEFAULT_PORT=6365
 
+# 旧版 Docker 部署的数据卷位置（用于迁移数据）
+DOCKER_DB="/var/lib/docker/volumes/sqlite_data/_data/gost.db"
 
-
-# 全局下载地址配置
-DOCKER_COMPOSEV4_URL="https://github.com/bqlpfy/flux-panel/releases/download/2.0.7-beta/docker-compose-v4.yml"
-DOCKER_COMPOSEV6_URL="https://github.com/bqlpfy/flux-panel/releases/download/2.0.7-beta/docker-compose-v6.yml"
-
-COUNTRY=$(curl -s https://ipinfo.io/country)
+GH_PROXY=""
+COUNTRY=$(curl -s --max-time 5 https://ipinfo.io/country 2>/dev/null)
 if [ "$COUNTRY" = "CN" ]; then
-    # 拼接 URL
-    DOCKER_COMPOSEV4_URL="https://ghfast.top/${DOCKER_COMPOSEV4_URL}"
-    DOCKER_COMPOSEV6_URL="https://ghfast.top/${DOCKER_COMPOSEV6_URL}"
+  GH_PROXY="https://ghfast.top/"
 fi
 
-
-
-# 根据IPv6支持情况选择docker-compose URL
-get_docker_compose_url() {
-  if check_ipv6_support > /dev/null 2>&1; then
-    echo "$DOCKER_COMPOSEV6_URL"
-  else
-    echo "$DOCKER_COMPOSEV4_URL"
-  fi
-}
-
-# 检查 docker-compose 或 docker compose 命令
-check_docker() {
-  if command -v docker-compose &> /dev/null; then
-    DOCKER_CMD="docker-compose"
-  elif command -v docker &> /dev/null; then
-    if docker compose version &> /dev/null; then
-      DOCKER_CMD="docker compose"
-    else
-      echo "错误：检测到 docker，但不支持 'docker compose' 命令。请安装 docker-compose 或更新 docker 版本。"
-      exit 1
-    fi
-  else
-    echo "错误：未检测到 docker 或 docker-compose 命令。请先安装 Docker。"
+# ---------------------------------------------------------------------
+# 通用函数
+# ---------------------------------------------------------------------
+require_root() {
+  if [[ $EUID -ne 0 ]]; then
+    echo "❌ 请使用 root 用户运行此脚本"
     exit 1
   fi
-  echo "检测到 Docker 命令：$DOCKER_CMD"
 }
 
-# 检测系统是否支持 IPv6
-check_ipv6_support() {
-  echo "🔍 检测 IPv6 支持..."
+check_deps() {
+  local missing=()
+  for cmd in curl tar systemctl; do
+    command -v "$cmd" >/dev/null 2>&1 || missing+=("$cmd")
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "❌ 缺少必要命令: ${missing[*]}，请先安装后重试"
+    exit 1
+  fi
+}
 
-  # 检查是否有 IPv6 地址（排除 link-local 地址）
-  if ip -6 addr show | grep -v "scope link" | grep -q "inet6"; then
-    echo "✅ 检测到系统支持 IPv6"
-    return 0
-  elif ifconfig 2>/dev/null | grep -v "fe80:" | grep -q "inet6"; then
-    echo "✅ 检测到系统支持 IPv6"
-    return 0
+is_installed() {
+  [[ -x "${INSTALL_DIR}/flux-panel" && -f "$SERVICE_FILE" ]]
+}
+
+download() {
+  local url="$1" out="$2"
+  echo "⬇️ 下载: $url"
+  if ! curl -fL --retry 3 --connect-timeout 15 -o "$out" "$url"; then
+    echo "❌ 下载失败: $url"
+    return 1
+  fi
+  [[ -s "$out" ]]
+}
+
+generate_secret() {
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -hex 16
   else
-    echo "⚠️ 未检测到 IPv6 支持"
+    tr -dc 'a-zA-Z0-9' </dev/urandom | head -c 32
+  fi
+}
+
+current_port() {
+  local p
+  p=$(grep -E '^SERVER_PORT=' "$ENV_FILE" 2>/dev/null | cut -d= -f2)
+  echo "${p:-$DEFAULT_PORT}"
+}
+
+port_in_use() {
+  local port="$1"
+  if command -v ss >/dev/null 2>&1; then
+    ss -ltnH 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]${port}$"
+  elif command -v netstat >/dev/null 2>&1; then
+    netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]${port}$"
+  else
     return 1
   fi
 }
 
+public_ip() {
+  local ip
+  ip=$(curl -s4 --max-time 5 https://api.ipify.org 2>/dev/null)
+  echo "${ip:-服务器IP}"
+}
 
+wait_healthy() {
+  local port="$1"
+  echo "⏳ 等待面板启动..."
+  for _ in $(seq 1 60); do
+    if [[ "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${port}/flow/test")" == "200" ]]; then
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
 
-# 配置 Docker 启用 IPv6
-configure_docker_ipv6() {
-  echo "🔧 配置 Docker IPv6 支持..."
+# ---------------------------------------------------------------------
+# 面板程序（单个二进制文件）
+# ---------------------------------------------------------------------
+panel_arch() {
+  case "$(uname -m)" in
+    x86_64|amd64) echo "amd64" ;;
+    aarch64|arm64) echo "arm64" ;;
+    *) echo "" ;;
+  esac
+}
 
-  # 检查操作系统类型
-  OS_TYPE=$(uname -s)
+# 下载面板二进制到临时文件，成功后输出文件路径
+fetch_panel_binary() {
+  local arch tmp
+  arch=$(panel_arch)
+  if [[ -z "$arch" ]]; then
+    echo "❌ 不支持的架构: $(uname -m)（仅支持 amd64 / arm64）" >&2
+    return 1
+  fi
+  tmp=$(mktemp)
+  if [[ -n "$PANEL_BINARY" ]]; then
+    # 使用本地二进制（离线安装 / CI 测试）
+    cp -f "$PANEL_BINARY" "$tmp" || { rm -f "$tmp"; return 1; }
+  else
+    download "${GH_PROXY}${RELEASE_URL}/flux-panel-${arch}" "$tmp" >&2 || { rm -f "$tmp"; return 1; }
+  fi
+  chmod +x "$tmp"
+  if ! "$tmp" -v >/dev/null 2>&1; then
+    echo "❌ 面板程序无法运行（文件损坏或架构不匹配）" >&2
+    rm -f "$tmp"
+    return 1
+  fi
+  echo "$tmp"
+}
 
-  if [[ "$OS_TYPE" == "Darwin" ]]; then
-    # macOS 上 Docker Desktop 已默认支持 IPv6
-    echo "✅ macOS Docker Desktop 默认支持 IPv6"
+panel_version() {
+  "${INSTALL_DIR}/flux-panel" -v 2>/dev/null | awk '{print $2}'
+}
+
+write_env() {
+  local port="$1" secret="$2"
+  cat > "$ENV_FILE" <<EOF
+# flux-panel 运行配置（修改后执行 systemctl restart ${SERVICE_NAME} 生效）
+SERVER_PORT=${port}
+JWT_SECRET=${secret}
+DB_PATH=${INSTALL_DIR}/data/gost.db
+LOG_DIR=${INSTALL_DIR}/logs
+TZ=Asia/Shanghai
+EOF
+  chmod 600 "$ENV_FILE"
+}
+
+write_service() {
+  cat > "$SERVICE_FILE" <<EOF
+[Unit]
+Description=Flux Panel
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=${INSTALL_DIR}
+EnvironmentFile=${ENV_FILE}
+ExecStart=${INSTALL_DIR}/flux-panel
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=30
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  systemctl daemon-reload
+}
+
+# ---------------------------------------------------------------------
+# 从旧版 Docker 部署迁移
+# ---------------------------------------------------------------------
+stop_old_docker_panel() {
+  command -v docker >/dev/null 2>&1 || return 0
+  local found=()
+  for c in vite-frontend springboot-backend gost-mysql; do
+    if docker ps -a --format '{{.Names}}' 2>/dev/null | grep -qx "$c"; then
+      found+=("$c")
+    fi
+  done
+  [[ ${#found[@]} -eq 0 ]] && return 0
+
+  echo "🔍 检测到旧版 Docker 部署的容器: ${found[*]}"
+  echo "   它们会占用面板端口，需要先停止并删除（数据卷会保留）。"
+  read -p "是否停止并删除这些容器？(Y/n): " ans
+  if [[ "$ans" == "n" || "$ans" == "N" ]]; then
+    echo "⚠️ 已跳过，如端口冲突请手动停止旧容器"
+    return 0
+  fi
+  docker stop "${found[@]}" >/dev/null 2>&1
+  docker rm "${found[@]}" >/dev/null 2>&1
+  echo "✅ 旧容器已停止并删除"
+}
+
+migrate_docker_data() {
+  [[ -f "${INSTALL_DIR}/data/gost.db" ]] && return 0
+  [[ -f "$DOCKER_DB" ]] || return 0
+  echo "🔍 检测到旧版 Docker 部署的数据库: $DOCKER_DB"
+  read -p "是否迁移旧数据（用户、节点、隧道、转发等）？(Y/n): " ans
+  if [[ "$ans" == "n" || "$ans" == "N" ]]; then
+    return 0
+  fi
+  cp -f "$DOCKER_DB" "${INSTALL_DIR}/data/gost.db"
+  for ext in -wal -shm; do
+    [[ -f "${DOCKER_DB}${ext}" ]] && cp -f "${DOCKER_DB}${ext}" "${INSTALL_DIR}/data/gost.db${ext}"
+  done
+  echo "✅ 旧数据已迁移"
+}
+
+# ---------------------------------------------------------------------
+# 安装 / 更新 / 卸载 / 状态
+# ---------------------------------------------------------------------
+install_panel() {
+  require_root
+  check_deps
+
+  if is_installed; then
+    echo "⚠️ 面板已安装在 ${INSTALL_DIR}，如需升级请选择“更新面板”"
+    return 1
+  fi
+
+  stop_old_docker_panel
+
+  local port="$PANEL_PORT"
+  if [[ -z "$port" ]]; then
+    read -p "面板端口（默认 ${DEFAULT_PORT}）: " port
+  fi
+  port=${port:-$DEFAULT_PORT}
+  if ! [[ "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+    echo "❌ 端口无效: $port"
+    return 1
+  fi
+  if port_in_use "$port"; then
+    echo "❌ 端口 $port 已被占用，请换一个端口"
+    return 1
+  fi
+
+  echo "🚀 开始安装面板到 ${INSTALL_DIR} ..."
+  mkdir -p "${INSTALL_DIR}/data" "${INSTALL_DIR}/logs"
+
+  local bin
+  bin=$(fetch_panel_binary) || return 1
+  mv -f "$bin" "${INSTALL_DIR}/flux-panel"
+
+  migrate_docker_data
+
+  write_env "$port" "$(generate_secret)"
+  write_service
+  systemctl enable "$SERVICE_NAME" >/dev/null 2>&1
+  systemctl restart "$SERVICE_NAME"
+
+  if wait_healthy "$port"; then
+    local ip
+    ip=$(public_ip)
+    echo ""
+    echo "🎉 面板安装完成"
+    echo "🌐 访问地址: http://${ip}:${port}"
+    echo "👤 默认管理员: admin_user / admin_user（首次登录后请立即修改密码）"
+    echo "📌 添加节点前，请在“网站配置”里把面板地址设为 ${ip}:${port}"
+    echo "📁 安装目录: ${INSTALL_DIR}    配置文件: ${ENV_FILE}"
+    echo "📜 查看日志: journalctl -u ${SERVICE_NAME} -f"
+  else
+    echo "❌ 面板启动超时，请查看日志: journalctl -u ${SERVICE_NAME} -n 100"
+    return 1
+  fi
+}
+
+update_panel() {
+  require_root
+  check_deps
+
+  if ! is_installed; then
+    echo "❌ 面板未安装，请先选择安装"
+    return 1
+  fi
+
+  echo "🔄 开始更新面板..."
+  local bin
+  bin=$(fetch_panel_binary) || return 1
+
+  echo "🛑 停止面板服务..."
+  systemctl stop "$SERVICE_NAME"
+
+  # 备份旧版本和数据库，更新失败时回滚
+  cp -f "${INSTALL_DIR}/flux-panel" "${INSTALL_DIR}/flux-panel.bak"
+  [[ -f "${INSTALL_DIR}/data/gost.db" ]] && cp -f "${INSTALL_DIR}/data/gost.db" "${INSTALL_DIR}/data/gost.db.bak"
+
+  mv -f "$bin" "${INSTALL_DIR}/flux-panel"
+  write_service
+  systemctl start "$SERVICE_NAME"
+
+  local port
+  port=$(current_port)
+  if wait_healthy "$port"; then
+    echo "✅ 更新完成，当前版本: $(panel_version)"
+  else
+    echo "❌ 新版本启动失败，正在回滚到旧版本..."
+    systemctl stop "$SERVICE_NAME"
+    mv -f "${INSTALL_DIR}/flux-panel.bak" "${INSTALL_DIR}/flux-panel"
+    systemctl start "$SERVICE_NAME"
+    echo "↩️ 已回滚，请查看日志: journalctl -u ${SERVICE_NAME} -n 100"
+    return 1
+  fi
+}
+
+reset_admin() {
+  require_root
+  if ! is_installed; then
+    echo "❌ 面板未安装"
+    return 1
+  fi
+  read -p "确认把管理员账号密码重置为 admin_user / admin_user 吗？(y/N): " confirm
+  if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    echo "❌ 已取消"
+    return 0
+  fi
+  (set -a; . "$ENV_FILE"; set +a; "${INSTALL_DIR}/flux-panel" -reset-admin)
+}
+
+uninstall_panel() {
+  require_root
+
+  if [[ ! -d "$INSTALL_DIR" && ! -f "$SERVICE_FILE" ]]; then
+    echo "ℹ️ 面板未安装"
     return 0
   fi
 
-  # Docker daemon 配置文件路径
-  DOCKER_CONFIG="/etc/docker/daemon.json"
-
-  # 检查是否需要 sudo
-  if [[ $EUID -ne 0 ]]; then
-    SUDO_CMD="sudo"
-  else
-    SUDO_CMD=""
-  fi
-
-  # 检查 Docker 配置文件
-  if [ -f "$DOCKER_CONFIG" ]; then
-    # 检查是否已经配置了 IPv6
-    if grep -q '"ipv6"' "$DOCKER_CONFIG"; then
-      echo "✅ Docker 已配置 IPv6 支持"
-    else
-      echo "📝 更新 Docker 配置以启用 IPv6..."
-      # 备份原配置
-      $SUDO_CMD cp "$DOCKER_CONFIG" "${DOCKER_CONFIG}.backup"
-
-      # 使用 jq 或 sed 添加 IPv6 配置
-      if command -v jq &> /dev/null; then
-        $SUDO_CMD jq '. + {"ipv6": true, "fixed-cidr-v6": "fd00::/80"}' "$DOCKER_CONFIG" > /tmp/daemon.json && $SUDO_CMD mv /tmp/daemon.json "$DOCKER_CONFIG"
-      else
-        # 如果没有 jq，使用 sed
-        $SUDO_CMD sed -i 's/^{$/{\n  "ipv6": true,\n  "fixed-cidr-v6": "fd00::\/80",/' "$DOCKER_CONFIG"
-      fi
-
-      echo "🔄 重启 Docker 服务..."
-      if command -v systemctl &> /dev/null; then
-        $SUDO_CMD systemctl restart docker
-      elif command -v service &> /dev/null; then
-        $SUDO_CMD service docker restart
-      else
-        echo "⚠️ 请手动重启 Docker 服务"
-      fi
-      sleep 5
-    fi
-  else
-    # 创建新的配置文件
-    echo "📝 创建 Docker 配置文件..."
-    $SUDO_CMD mkdir -p /etc/docker
-    echo '{
-  "ipv6": true,
-  "fixed-cidr-v6": "fd00::/80"
-}' | $SUDO_CMD tee "$DOCKER_CONFIG" > /dev/null
-
-    echo "🔄 重启 Docker 服务..."
-    if command -v systemctl &> /dev/null; then
-      $SUDO_CMD systemctl restart docker
-    elif command -v service &> /dev/null; then
-      $SUDO_CMD service docker restart
-    else
-      echo "⚠️ 请手动重启 Docker 服务"
-    fi
-    sleep 5
-  fi
-}
-
-# 显示菜单
-show_menu() {
-  echo "==============================================="
-  echo "          面板管理脚本"
-  echo "==============================================="
-  echo "请选择操作："
-  echo "1. 安装面板"
-  echo "2. 更新面板"
-  echo "3. 卸载面板"
-  echo "4. 退出"
-  echo "==============================================="
-}
-
-generate_random() {
-  LC_ALL=C tr -dc 'A-Za-z0-9' </dev/urandom | head -c16
-}
-
-# 删除脚本自身
-delete_self() {
-  echo ""
-  echo "🗑️ 操作已完成，正在清理脚本文件..."
-  SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null || realpath "$0" 2>/dev/null || echo "$0")"
-  sleep 1
-  rm -f "$SCRIPT_PATH" && echo "✅ 脚本文件已删除" || echo "❌ 删除脚本文件失败"
-}
-
-
-
-# 获取用户输入的配置参数
-get_config_params() {
-  echo "🔧 请输入配置参数："
-
-  read -p "前端端口（默认 6366）: " FRONTEND_PORT
-  FRONTEND_PORT=${FRONTEND_PORT:-6366}
-
-  read -p "后端端口（默认 6365）: " BACKEND_PORT
-  BACKEND_PORT=${BACKEND_PORT:-6365}
-
-  # 生成JWT密钥
-  JWT_SECRET=$(generate_random)
-}
-
-# 安装功能
-install_panel() {
-  echo "🚀 开始安装面板..."
-  check_docker
-  get_config_params
-
-  echo "🔽 下载必要文件..."
-  DOCKER_COMPOSE_URL=$(get_docker_compose_url)
-  echo "📡 选择配置文件：$(basename "$DOCKER_COMPOSE_URL")"
-  curl -L -o docker-compose.yml "$DOCKER_COMPOSE_URL"
-  echo "✅ 文件准备完成"
-
-  # 自动检测并配置 IPv6 支持
-  if check_ipv6_support; then
-    echo "🚀 系统支持 IPv6，自动启用 IPv6 配置..."
-    configure_docker_ipv6
-  fi
-
-  cat > .env <<EOF
-JWT_SECRET=$JWT_SECRET
-FRONTEND_PORT=$FRONTEND_PORT
-BACKEND_PORT=$BACKEND_PORT
-EOF
-
-  echo "🚀 启动 docker 服务..."
-  $DOCKER_CMD up -d
-
-  echo "🎉 部署完成"
-  echo "🌐 访问地址: http://服务器IP:$FRONTEND_PORT"
-  echo "📖 部署完成后请阅读下使用文档，求求了啊，不要上去就是一顿操作"
-  echo "📚 文档地址: https://tes.cc/guide.html"
-  echo "💡 默认管理员账号: admin_user / admin_user"
-  echo "⚠️  登录后请立即修改默认密码！"
-
-
-}
-
-# 更新功能
-update_panel() {
-  echo "🔄 开始更新面板..."
-  check_docker
-
-  echo "🔽 下载最新配置文件..."
-  DOCKER_COMPOSE_URL=$(get_docker_compose_url)
-  echo "📡 选择配置文件：$(basename "$DOCKER_COMPOSE_URL")"
-  curl -L -o docker-compose.yml "$DOCKER_COMPOSE_URL"
-  echo "✅ 下载完成"
-
-  # 自动检测并配置 IPv6 支持
-  if check_ipv6_support; then
-    echo "🚀 系统支持 IPv6，自动启用 IPv6 配置..."
-    configure_docker_ipv6
-  fi
-
-  # 先发送 SIGTERM 信号，让应用优雅关闭
-  docker stop -t 30 springboot-backend 2>/dev/null || true
-  docker stop -t 10 vite-frontend 2>/dev/null || true
-  
-  # 等待 WAL 文件同步
-  echo "⏳ 等待数据同步..."
-  sleep 5
-  
-  # 然后再完全停止
-  $DOCKER_CMD down
-
-  echo "⬇️ 拉取最新镜像..."
-  $DOCKER_CMD pull
-
-  echo "🚀 启动更新后的服务..."
-  $DOCKER_CMD up -d
-
-  # 等待服务启动
-  echo "⏳ 等待服务启动..."
-
-  # 检查后端容器健康状态
-  echo "🔍 检查后端服务状态..."
-  for i in {1..90}; do
-    if docker ps --format "{{.Names}}" | grep -q "^springboot-backend$"; then
-      BACKEND_HEALTH=$(docker inspect -f '{{.State.Health.Status}}' springboot-backend 2>/dev/null || echo "unknown")
-      if [[ "$BACKEND_HEALTH" == "healthy" ]]; then
-        echo "✅ 后端服务健康检查通过"
-        break
-      elif [[ "$BACKEND_HEALTH" == "starting" ]]; then
-        # 继续等待
-        :
-      elif [[ "$BACKEND_HEALTH" == "unhealthy" ]]; then
-        echo "⚠️ 后端健康状态：$BACKEND_HEALTH"
-      fi
-    else
-      echo "⚠️ 后端容器未找到或未运行"
-      BACKEND_HEALTH="not_running"
-    fi
-    if [ $i -eq 90 ]; then
-      echo "❌ 后端服务启动超时（90秒）"
-      echo "🔍 当前状态：$(docker inspect -f '{{.State.Health.Status}}' springboot-backend 2>/dev/null || echo '容器不存在')"
-      echo "🛑 更新终止"
-      return 1
-    fi
-    # 每15秒显示一次进度
-    if [ $((i % 15)) -eq 1 ]; then
-      echo "⏳ 等待后端服务启动... ($i/90) 状态：${BACKEND_HEALTH:-unknown}"
-    fi
-    sleep 1
-  done
-
-  echo "✅ 更新完成"
-}
-
-
-
-# 卸载功能
-uninstall_panel() {
-  echo "🗑️ 开始卸载面板..."
-  check_docker
-
-  if [[ ! -f "docker-compose.yml" ]]; then
-    echo "⚠️ 未找到 docker-compose.yml 文件，正在下载以完成卸载..."
-    DOCKER_COMPOSE_URL=$(get_docker_compose_url)
-    echo "📡 选择配置文件：$(basename "$DOCKER_COMPOSE_URL")"
-    curl -L -o docker-compose.yml "$DOCKER_COMPOSE_URL"
-    echo "✅ docker-compose.yml 下载完成"
-  fi
-
-  read -p "确认卸载面板吗？此操作将停止并删除所有容器和数据 (y/N): " confirm
+  read -p "确认卸载面板吗？(y/N): " confirm
   if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
     echo "❌ 取消卸载"
     return 0
   fi
 
-  echo "🛑 停止并删除容器、镜像、卷..."
-  $DOCKER_CMD down --rmi all --volumes --remove-orphans
-  echo "🧹 删除配置文件..."
-  rm -f docker-compose.yml .env
+  systemctl stop "$SERVICE_NAME" 2>/dev/null
+  systemctl disable "$SERVICE_NAME" 2>/dev/null
+  rm -f "$SERVICE_FILE"
+  systemctl daemon-reload
+
+  read -p "是否同时删除数据库（用户、节点、转发等数据，删除后无法恢复）？(y/N): " deldata
+  if [[ "$deldata" == "y" || "$deldata" == "Y" ]]; then
+    rm -rf "$INSTALL_DIR"
+    echo "🧹 已删除 ${INSTALL_DIR}（含数据库）"
+  else
+    find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 ! -name data -exec rm -rf {} +
+    echo "🧹 已删除程序文件，数据库保留在 ${INSTALL_DIR}/data"
+  fi
   echo "✅ 卸载完成"
 }
 
-# 主逻辑
-main() {
+show_status() {
+  if ! is_installed; then
+    echo "ℹ️ 面板未安装"
+    return 0
+  fi
+  echo "📦 版本: $(panel_version)"
+  echo "🔧 服务: $(systemctl is-active "$SERVICE_NAME")"
+  echo "🔌 端口: $(current_port)"
+  echo "📁 目录: ${INSTALL_DIR}"
+  echo "📜 日志: journalctl -u ${SERVICE_NAME} -f"
+}
 
-  # 显示交互式菜单
+show_menu() {
+  echo "==============================================="
+  echo "          flux-panel 面板管理脚本"
+  echo "==============================================="
+  echo "1. 安装面板"
+  echo "2. 更新面板"
+  echo "3. 卸载面板"
+  echo "4. 查看状态"
+  echo "5. 重置管理员密码"
+  echo "6. 退出"
+  echo "==============================================="
+}
+
+main() {
+  case "$1" in
+    install) install_panel; exit $? ;;
+    update) update_panel; exit $? ;;
+    uninstall) uninstall_panel; exit $? ;;
+    status) show_status; exit $? ;;
+    reset-admin) reset_admin; exit $? ;;
+    "") ;;
+    *) echo "用法: $0 [install|update|uninstall|status|reset-admin]"; exit 1 ;;
+  esac
+
   while true; do
     show_menu
-    read -p "请输入选项 (1-5): " choice
-
+    read -p "请输入选项 (1-6): " choice
     case $choice in
-      1)
-        install_panel
-        delete_self
-        exit 0
-        ;;
-      2)
-        update_panel
-        delete_self
-        exit 0
-        ;;
-      3)
-        uninstall_panel
-        delete_self
-        exit 0
-        ;;
-      4)
-        echo "👋 退出脚本"
-        delete_self
-        exit 0
-        ;;
-      *)
-        echo "❌ 无效选项，请输入 1-5"
-        echo ""
-        ;;
+      1) install_panel; exit $? ;;
+      2) update_panel; exit $? ;;
+      3) uninstall_panel; exit $? ;;
+      4) show_status; echo "" ;;
+      5) reset_admin; exit $? ;;
+      6) echo "👋 退出脚本"; exit 0 ;;
+      *) echo "❌ 无效选项，请输入 1-6"; echo "" ;;
     esac
   done
 }
 
-# 执行主函数
-main
+main "$@"

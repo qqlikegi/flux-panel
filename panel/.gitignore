@@ -1,0 +1,6 @@
+web/dist/
+/flux-panel*
+/data/
+/logs/
+# 根目录 .gitignore 忽略了 sql/，这里的建表脚本需要提交
+!sql/

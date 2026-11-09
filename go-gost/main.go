@@ -29,6 +29,9 @@ func (l *stringList) Set(value string) error {
 	return nil
 }
 
+// agentVersion 上报给面板的节点端版本号，发布时通过 -ldflags "-X main.agentVersion=..." 注入
+var agentVersion = "2.0.7"
+
 var (
 	cfgFile      string
 	outputFormat string
@@ -128,7 +131,7 @@ func main() {
 	log := xlogger.NewLogger()
 	logger.SetDefault(log)
 
-	wsReporter := socket.StartWebSocketReporterWithConfig(config.Addr, config.Secret, config.Http, config.Tls, config.Socks, "2.0.7")
+	wsReporter := socket.StartWebSocketReporterWithConfig(config.Addr, config.Secret, config.Http, config.Tls, config.Socks, agentVersion)
 	defer wsReporter.Stop()
 	service.SetHTTPReportURL(config.Addr, config.Secret)
 

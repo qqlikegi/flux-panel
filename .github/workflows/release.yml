@@ -1,0 +1,132 @@
+name: Build & Release
+
+# 推送到 main 时只构建 + 冒烟测试；推送 v* 标签时额外发布 Release
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+    steps:
+      - id: v
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=dev-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+          fi
+
+  agent:
+    name: Agent (${{ matrix.arch }})
+    needs: version
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go-gost/go.mod
+          cache-dependency-path: go-gost/go.sum
+      - name: Build
+        working-directory: go-gost
+        env:
+          CGO_ENABLED: '0'
+          GOOS: linux
+          GOARCH: ${{ matrix.arch }}
+        run: go build -trimpath -ldflags "-s -w -X main.agentVersion=${{ needs.version.outputs.version }}" -o gost-${{ matrix.arch }} .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gost-${{ matrix.arch }}
+          path: go-gost/gost-${{ matrix.arch }}
+
+  panel:
+    name: Panel (Go 单文件，内置前端)
+    needs: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build frontend
+        working-directory: vite-frontend
+        run: |
+          sed -i "s/^const VERSION = \".*\";/const VERSION = \"${{ needs.version.outputs.version }}\";/" src/config/site.ts
+          npm install --legacy-peer-deps
+          npm run build
+      - name: Embed frontend
+        run: |
+          rm -rf panel/web/dist
+          cp -r vite-frontend/dist panel/web/dist
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: panel/go.mod
+          cache-dependency-path: panel/go.sum
+      - name: Build panel (linux amd64 / arm64)
+        working-directory: panel
+        env:
+          CGO_ENABLED: '0'
+        run: |
+          for arch in amd64 arm64; do
+            GOOS=linux GOARCH=$arch go build -trimpath -ldflags "-s -w -X main.version=${{ needs.version.outputs.version }}" -o ../flux-panel-$arch .
+          done
+          ../flux-panel-amd64 -v
+      - uses: actions/upload-artifact@v4
+        with:
+          name: flux-panel
+          path: |
+            flux-panel-amd64
+            flux-panel-arm64
+
+  smoke-test:
+    name: Smoke test (install on Ubuntu)
+    needs: [agent, panel]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - name: Install panel + agent and run end-to-end checks
+        run: sudo bash .github/scripts/smoke-test.sh "$PWD/artifacts"
+      - name: Logs on failure
+        if: failure()
+        run: |
+          sudo journalctl -u flux-panel --no-pager -n 200 || true
+          sudo journalctl -u flux_agent --no-pager -n 200 || true
+
+  release:
+    name: Publish release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+      - run: cp install.sh panel_install.sh artifacts/
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/flux-panel-amd64
+            artifacts/flux-panel-arm64
+            artifacts/gost-amd64
+            artifacts/gost-arm64
+            artifacts/install.sh
+            artifacts/panel_install.sh
+          generate_release_notes: true
+          make_latest: true
