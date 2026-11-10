@@ -101,6 +101,31 @@ port_in_use() {
   fi
 }
 
+# 浏览器（Chrome / Edge / Firefox）禁止访问的端口，用了会报“无法访问此页面”/ ERR_UNSAFE_PORT
+BROWSER_BLOCKED_PORTS="1 7 9 11 13 15 17 19 20 21 22 23 25 37 42 43 53 69 77 79 87 95 101 102 103 104 109 110 111 113 115 117 119 123 135 137 139 143 161 179 389 427 465 512 513 514 515 526 530 531 532 540 548 554 556 563 587 601 636 989 990 993 995 1719 1720 1723 2049 3659 4045 4190 5060 5061 5566 6000 6566 6665 6666 6667 6668 6669 6679 6697 10080"
+
+browser_blocked_port() {
+  [[ " $BROWSER_BLOCKED_PORTS " == *" $1 "* ]]
+}
+
+# check_port 检查端口能否用于面板，不能用时打印原因并返回 1
+check_port() {
+  local port="$1"
+  if ! [[ "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+    echo "❌ 端口无效: $port（范围 1-65535）"
+    return 1
+  fi
+  if browser_blocked_port "$port"; then
+    echo "❌ 端口 $port 被浏览器列为不安全端口，网页会打不开，请换一个（如 ${DEFAULT_PORT}、8080、8888）"
+    return 1
+  fi
+  if port_in_use "$port"; then
+    echo "❌ 端口 $port 已被占用，请换一个端口"
+    return 1
+  fi
+  return 0
+}
+
 public_ip() {
   local ip
   ip=$(curl -s4 --max-time 5 https://api.ipify.org 2>/dev/null)
@@ -240,17 +265,14 @@ install_panel() {
   fi
 
   local port="$PANEL_PORT"
-  if [[ -z "$port" ]]; then
-    read -p "面板端口（默认 ${DEFAULT_PORT}）: " port
-  fi
-  port=${port:-$DEFAULT_PORT}
-  if ! [[ "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
-    echo "❌ 端口无效: $port"
-    return 1
-  fi
-  if port_in_use "$port"; then
-    echo "❌ 端口 $port 已被占用，请换一个端口"
-    return 1
+  if [[ -n "$port" ]]; then
+    check_port "$port" || return 1
+  else
+    while true; do
+      read -p "面板端口（默认 ${DEFAULT_PORT}）: " port || { echo; return 1; }
+      port=${port:-$DEFAULT_PORT}
+      check_port "$port" && break
+    done
   fi
 
   echo "🚀 开始安装面板到 ${INSTALL_DIR} ..."
