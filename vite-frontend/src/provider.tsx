@@ -34,6 +34,10 @@ export function Provider({ children }: ProvidersProps) {
                 background: 'var(--toaster-bg, #ffffff)',
                 color: 'var(--toaster-color, #000000)',
                 border: '1px solid var(--toaster-border, #e5e7eb)',
+                borderRadius: '9999px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                boxShadow: 'var(--fz-pill-shadow)',
               },
               success: {
                 duration: 2000,

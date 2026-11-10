@@ -2,15 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    
+
     <title>ForwardZ</title>
     <script>
       // 防止暗黑模式闪烁：在页面加载前立即应用系统主题
       (function() {
         // 立即检测系统主题并应用
         const isDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
+
         // 立即设置主题类，避免闪烁
         if (isDarkMode) {
           document.documentElement.classList.add('dark');
@@ -19,7 +18,7 @@
           document.documentElement.classList.remove('dark');
           document.documentElement.style.colorScheme = 'light';
         }
-        
+
         // 监听系统主题变化
         if (window.matchMedia) {
           window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
@@ -32,13 +31,13 @@
             }
           });
         }
-        
+
         // 检测H5模式并设置标记，避免布局切换时的闪屏
         const isMobile = window.innerWidth <= 768;
         const isMobileBrowser = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const urlParams = new URLSearchParams(window.location.search);
         const isH5Param = urlParams.get('h5') === 'true';
-        
+
         if (isMobile || isMobileBrowser || isH5Param) {
           document.documentElement.classList.add('h5-mode');
         } else {
@@ -53,34 +52,34 @@
         --toaster-color: #000000;
         --toaster-border: #e5e7eb;
       }
-      
+
       html.dark {
-        --toaster-bg: #374151;
-        --toaster-color: #ffffff;
-        --toaster-border: #4b5563;
+        --toaster-bg: #1b1b1f;
+        --toaster-color: #ededef;
+        --toaster-border: rgba(255, 255, 255, 0.1);
       }
-      
+
       /* 默认浅色主题样式 */
       body {
         margin: 0;
         padding: 0;
-        background-color: #ffffff;
-        color: #000000;
+        background-color: #fafafb;
+        color: #17181c;
         transition: background-color 0.2s ease, color 0.2s ease;
         /* 禁用弹性滚动 */
         overscroll-behavior: none;
         -webkit-overflow-scrolling: touch;
       }
-      
+
       /* 暗色主题样式 */
       html.dark body {
-        background-color: #000000;
-        color: #ffffff;
+        background-color: #0b0b0d;
+        color: #ededef;
       }
-      
+
       #root {
         min-height: 100vh;
-        background-color: inherit;
+        background-color: transparent;
         /* 确保根元素也禁用弹性滚动 */
         overscroll-behavior: none;
       }
@@ -94,43 +93,32 @@
       @supports (-webkit-touch-callout: none) {
         #root { min-height: -webkit-fill-available; }
       }
-      
+
       /* 防止加载时的闪烁 */
       * {
         box-sizing: border-box;
       }
-      
+
       /* 确保在主题切换时平滑过渡 */
       html {
         transition: color-scheme 0.2s ease;
         /* 禁用整个页面的弹性滚动 */
         overscroll-behavior: none;
       }
-      
+
       /* 防止布局切换时的闪屏 */
-      .h5-mode #root {
-        background-color: #ffffff;
-      }
-      
-      .h5-mode.dark #root {
-        background-color: #000000;
-      }
-      
+      .h5-mode #root,
       .pc-mode #root {
-        background-color: #ffffff;
+        background-color: transparent;
       }
-      
-      .pc-mode.dark #root {
-        background-color: #000000;
-      }
-            
+
       /* 移动端滚动优化 */
       @media (max-width: 768px) {
         html, body {
           overscroll-behavior: none;
           -webkit-overflow-scrolling: touch;
         }
-        
+
         /* 确保固定定位的元素不受滚动影响 */
         .fixed {
           overscroll-behavior: none;

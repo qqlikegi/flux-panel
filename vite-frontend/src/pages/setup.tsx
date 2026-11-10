@@ -6,7 +6,6 @@ import { Card, CardBody, CardHeader } from "@heroui/card";
 import toast from "react-hot-toast";
 
 import DefaultLayout from "@/layouts/default";
-import { title } from "@/components/primitives";
 import { initSetup } from "@/api";
 
 /** 首次部署：设置管理员用户名和密码（复杂度不限），完成后直接进入面板 */
@@ -52,7 +51,7 @@ export default function SetupPage() {
         <div className="w-full max-w-md px-4 sm:px-0">
           <Card className="w-full">
             <CardHeader className="pb-0 pt-6 px-6 flex-col items-center">
-              <h1 className={title({ size: "sm" })}>初始化面板</h1>
+              <h1 className="fz-page-title">初始化面板</h1>
               <p className="text-small text-default-500 mt-2 text-center">
                 首次使用，请设置管理员用户名和密码
               </p>
@@ -66,6 +65,7 @@ export default function SetupPage() {
                   onValueChange={setUsername}
                   onKeyDown={onKey}
                   variant="bordered"
+                  labelPlacement="outside"
                   isDisabled={loading}
                   autoFocus
                 />
@@ -77,6 +77,7 @@ export default function SetupPage() {
                   onValueChange={setPassword}
                   onKeyDown={onKey}
                   variant="bordered"
+                  labelPlacement="outside"
                   isDisabled={loading}
                 />
                 <Input
@@ -87,6 +88,7 @@ export default function SetupPage() {
                   onValueChange={setConfirm}
                   onKeyDown={onKey}
                   variant="bordered"
+                  labelPlacement="outside"
                   isDisabled={loading}
                   isInvalid={mismatch}
                   errorMessage={mismatch ? "两次输入的密码不一致" : undefined}
@@ -94,7 +96,7 @@ export default function SetupPage() {
                 <Button
                   color="primary"
                   size="lg"
-                  className="mt-2"
+                  className="mt-2 fz-prism"
                   onPress={submit}
                   isLoading={loading}
                   isDisabled={!canSubmit}

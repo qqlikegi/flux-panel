@@ -7,7 +7,6 @@ import toast from 'react-hot-toast';
 import axios from 'axios';
 import { isWebViewFunc } from '@/utils/panel';
 import { siteConfig } from '@/config/site';
-import { title } from "@/components/primitives";
 import DefaultLayout from "@/layouts/default";
 import { login, LoginData, checkCaptcha, getSetupStatus } from "@/api";
 import SetupPage from "@/pages/setup";
@@ -269,12 +268,12 @@ export default function IndexPage() {
       <section className="flex flex-col items-center justify-center gap-4 py-4 sm:py-8 md:py-10 pb-20 min-h-[calc(100dvh-120px)] sm:min-h-[calc(100dvh-200px)]">
         <div className="w-full max-w-md px-4 sm:px-0">
           <Card className="w-full">
-            <CardHeader className="pb-0 pt-6 px-6 flex-col items-center">
-              <h1 className={title({ size: "sm" })}>登陆</h1>
+            <CardHeader className="pb-0 pt-8 px-8 flex-col items-start">
+              <h1 className="fz-page-title">登录 {siteConfig.name}</h1>
               <p className="text-small text-default-500 mt-2">请输入您的账号信息</p>
             </CardHeader>
-            <CardBody className="px-6 py-6">
-              <div className="flex flex-col gap-4">
+            <CardBody className="px-8 pt-6 pb-8">
+              <div className="flex flex-col gap-5">
                 <Input
                   label="用户名"
                   placeholder="请输入用户名"
@@ -282,6 +281,7 @@ export default function IndexPage() {
                   onChange={(e) => handleInputChange('username', e.target.value)}
                   onKeyDown={handleKeyPress}
                   variant="bordered"
+                  labelPlacement="outside"
                   isDisabled={loading}
                   isInvalid={!!errors.username}
                   errorMessage={errors.username}
@@ -295,6 +295,7 @@ export default function IndexPage() {
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   onKeyDown={handleKeyPress}
                   variant="bordered"
+                  labelPlacement="outside"
                   isDisabled={loading}
                   isInvalid={!!errors.password}
                 />
@@ -306,7 +307,7 @@ export default function IndexPage() {
                   onClick={handleLogin}
                   isLoading={loading}
                   disabled={loading}
-                  className="mt-2"
+                  className="mt-2 fz-prism"
                 >
                   {loading ? (showCaptcha ? "验证中..." : "登录中...") : "登录"}
                 </Button>

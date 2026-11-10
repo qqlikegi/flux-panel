@@ -9,7 +9,6 @@ import { Switch } from "@heroui/switch";
 import { Select, SelectItem } from "@heroui/select";
 import toast from 'react-hot-toast';
 import { updateConfigs } from '@/api';
-import { SettingsIcon } from '@/components/icons';
 import BackupSettings from '@/components/backup-settings';
 import FingerprintSettings from '@/components/fingerprint-settings';
 
@@ -337,18 +336,7 @@ export default function ConfigPage() {
 
   return (
     
-      <div className="p-6 max-w-4xl mx-auto">
-        {/* 页面标题 */}
-        <div className="flex items-center gap-3 mb-6">
-          <SettingsIcon className="w-8 h-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">系统配置</h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              管理网站的基本信息、显示设置和数据备份
-            </p>
-          </div>
-        </div>
-
+      <div className="px-3 lg:px-6 py-8 max-w-4xl">
         <Card className="shadow-md">
           <CardHeader className="pb-4">
             <div className="flex justify-between items-center w-full">

@@ -96,3 +96,223 @@ html, body {
 .recharts-wrapper *:focus {
   outline: none !important;
 }
+
+/* =====================================================================
+   ForwardZ 界面主题：中性灰阶、玻璃质感侧栏、胶囊形控件、大圆角卡片
+   ===================================================================== */
+
+/* Tailwind 的 gray 色板改为不带蓝调的中性灰，深色模式下更干净 */
+@theme {
+  --color-gray-50: #fafafb;
+  --color-gray-100: #f3f3f5;
+  --color-gray-200: #e8e8eb;
+  --color-gray-300: #d5d5da;
+  --color-gray-400: #a4a4ac;
+  --color-gray-500: #75757e;
+  --color-gray-600: #3a3a41;
+  --color-gray-700: #27272c;
+  --color-gray-800: #1b1b1f;
+  --color-gray-900: #121214;
+  --color-gray-950: #0b0b0d;
+  --font-sans: "Inter Tight", "Inter", "SF Pro Display", -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+:root {
+  --fz-canvas: #fafafb;
+  --fz-canvas-grad: linear-gradient(#ffffff, #f4f4f6);
+  --fz-strong: #111216;
+  --fz-text: #17181c;
+  --fz-secondary: #43444b;
+  --fz-muted: #7b7c85;
+  --fz-hairline: rgba(20, 22, 28, 0.10);
+  --fz-hover: rgba(20, 22, 28, 0.05);
+  --fz-input: #f1f1f3;
+  --fz-surface: #ffffff;
+  --fz-chrome: rgba(255, 255, 255, 0.55);
+  --fz-chrome-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.9), 1px 0 0 rgba(20, 22, 28, 0.06), 10px 0 28px -22px rgba(20, 22, 28, 0.2);
+  --fz-card-shadow: 0 0 0 1px rgba(20, 22, 28, 0.05), 0 1px 2px rgba(20, 22, 28, 0.06), 0 14px 32px -18px rgba(20, 22, 28, 0.28);
+  --fz-float-shadow: 0 0 0 1px rgba(20, 22, 28, 0.08), 0 2px 6px -2px rgba(20, 22, 28, 0.12), 0 24px 48px -20px rgba(20, 22, 28, 0.35);
+  --fz-pill-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 0 1px rgba(20, 22, 28, 0.10), 0 6px 16px -10px rgba(20, 22, 28, 0.28);
+  --fz-glow: radial-gradient(ellipse 55% 45% at 8% 0%, rgba(255, 255, 255, 0.95) 0%, transparent 70%);
+  --fz-prism: linear-gradient(90deg, #f0b84c, #ee7268, #8a7ce0, #3d9be6, #62d2b8);
+  --fz-prism-glow: 0.35;
+  --toaster-bg: #ffffff;
+  --toaster-color: #17181c;
+  --toaster-border: rgba(20, 22, 28, 0.10);
+}
+
+html.dark {
+  --fz-canvas: #0b0b0d;
+  --fz-canvas-grad: linear-gradient(#0e0e11, #09090b);
+  --fz-strong: #f7f7f8;
+  --fz-text: #ededef;
+  --fz-secondary: #c2c2c9;
+  --fz-muted: #8a8a94;
+  --fz-hairline: rgba(255, 255, 255, 0.09);
+  --fz-hover: rgba(255, 255, 255, 0.06);
+  --fz-input: #1b1b1f;
+  --fz-surface: #1b1b20;
+  --fz-chrome: rgba(18, 18, 21, 0.6);
+  --fz-chrome-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 10px 0 28px -22px rgba(0, 0, 0, 0.8);
+  --fz-card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 14px 32px -18px rgba(0, 0, 0, 0.7);
+  --fz-float-shadow: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 24px 48px -20px rgba(0, 0, 0, 0.85);
+  --fz-pill-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.10), 0 6px 16px -10px rgba(0, 0, 0, 0.6);
+  --fz-glow: radial-gradient(ellipse 55% 45% at 8% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+  --fz-prism-glow: 0.22;
+  --toaster-bg: #1b1b1f;
+  --toaster-color: #ededef;
+  --toaster-border: rgba(255, 255, 255, 0.10);
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--fz-canvas);
+  background-image: var(--fz-canvas-grad);
+  background-attachment: fixed;
+  color: var(--fz-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 页面画布：渐变底 + 左上角柔光 */
+.fz-canvas {
+  background: var(--fz-glow), var(--fz-canvas-grad);
+  background-color: var(--fz-canvas);
+}
+
+/* 登录 / 初始化页左上角的彩色光晕 */
+.fz-aurora::before {
+  content: "";
+  position: fixed;
+  inset: -20% 40% 40% -20%;
+  background:
+    radial-gradient(closest-side at 30% 35%, rgba(240, 184, 76, 0.55), transparent),
+    radial-gradient(closest-side at 55% 30%, rgba(98, 210, 184, 0.45), transparent),
+    radial-gradient(closest-side at 70% 45%, rgba(138, 124, 224, 0.45), transparent),
+    radial-gradient(closest-side at 35% 60%, rgba(238, 114, 104, 0.40), transparent);
+  filter: blur(70px);
+  opacity: var(--fz-prism-glow);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 侧栏的玻璃质感 */
+.fz-chrome {
+  background: var(--fz-chrome);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow: var(--fz-chrome-shadow);
+}
+
+.fz-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 13px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fz-secondary);
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.fz-nav-item:hover { background: var(--fz-hover); color: var(--fz-strong); }
+.fz-nav-item[data-active="true"] {
+  background: var(--fz-surface);
+  color: var(--fz-strong);
+  font-weight: 700;
+  box-shadow: 0 0 0 1px var(--fz-hairline), 0 6px 14px -10px rgba(20, 22, 28, 0.45);
+}
+.fz-nav-group {
+  padding: 14px 10px 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fz-muted);
+  white-space: nowrap;
+}
+
+/* 悬浮胶囊（顶栏账户按钮等） */
+.fz-pill {
+  background: var(--fz-surface);
+  box-shadow: var(--fz-pill-shadow);
+  border-radius: 9999px;
+}
+
+.fz-page-title {
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--fz-strong);
+}
+
+/* 彩虹描边主按钮 */
+.fz-prism {
+  border: 1.5px solid transparent !important;
+  background-image: linear-gradient(var(--fz-surface), var(--fz-surface)), var(--fz-prism) !important;
+  background-origin: border-box !important;
+  background-clip: padding-box, border-box !important;
+  color: var(--fz-strong) !important;
+  font-weight: 600 !important;
+  box-shadow: 0 8px 22px -14px rgba(138, 124, 224, 0.9), 0 8px 22px -14px rgba(240, 184, 76, 0.9);
+}
+
+/* ---------- HeroUI 组件统一外观 ---------- */
+
+/* 卡片、表格容器、弹出层 */
+.bg-content1.rounded-large {
+  box-shadow: var(--fz-card-shadow) !important;
+  border-color: transparent !important;
+}
+section[role="dialog"].bg-content1,
+div[role="dialog"] > .bg-content1,
+div[role="dialog"].bg-content1 {
+  box-shadow: var(--fz-float-shadow) !important;
+}
+
+/* 按钮：胶囊形 */
+button.tap-highlight-transparent[class*="rounded-"],
+a.tap-highlight-transparent[class*="rounded-"][role="button"] {
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+/* 浅色填充按钮（主色 / 默认色）：白色胶囊 + 细描边阴影 */
+button.tap-highlight-transparent.bg-primary\/20,
+button.tap-highlight-transparent.bg-default\/40 {
+  background: var(--fz-surface);
+  color: var(--fz-strong);
+  box-shadow: var(--fz-pill-shadow);
+}
+
+/* 输入框 / 下拉框：胶囊形、浅灰底、细描边 */
+[data-slot="input-wrapper"],
+button[data-slot="trigger"] {
+  border-radius: 9999px !important;
+  background-color: var(--fz-input) !important;
+  border-color: var(--fz-hairline) !important;
+  box-shadow: none !important;
+  padding-inline: 16px !important;
+}
+[data-slot="input-wrapper"]:has(textarea) { border-radius: 1.1rem !important; }
+[data-slot="input-wrapper"]:focus-within,
+button[data-slot="trigger"][data-focus="true"],
+button[data-slot="trigger"][data-open="true"] {
+  border-color: var(--fz-strong) !important;
+}
+[data-invalid="true"] [data-slot="input-wrapper"] { border-color: hsl(var(--heroui-danger)) !important; }
+
+/* 表格：透明表头、细分隔线 */
+th[role="columnheader"] {
+  background: transparent !important;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fz-muted) !important;
+  border-bottom: 1px solid var(--fz-hairline);
+  border-radius: 0 !important;
+}
+
+/* 滚动条 */
+* { scrollbar-width: thin; scrollbar-color: var(--fz-hairline) transparent; }

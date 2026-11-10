@@ -29,9 +29,9 @@ export default function H5SimpleLayout({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-black">
+    <div className="fz-canvas flex flex-col min-h-screen">
       {/* 顶部导航栏 */}
-      <header className="bg-white dark:bg-black shadow-sm border-b border-gray-200 dark:border-gray-600 h-14 safe-top flex-shrink-0 flex items-center justify-between px-4 relative z-10">
+      <header className="fz-chrome sticky top-0 h-14 safe-top flex-shrink-0 flex items-center justify-between px-4 z-20">
         <div className="flex items-center gap-2">
           <Button
             isIconOnly
@@ -43,8 +43,8 @@ export default function H5SimpleLayout({
               <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           </Button>
-          <Logo size={20} />
-          <h1 className="text-sm font-bold text-foreground">{siteConfig.name}</h1>
+          <Logo size={22} />
+          <h1 className="text-sm font-extrabold tracking-tight text-foreground">{siteConfig.name}</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -52,7 +52,7 @@ export default function H5SimpleLayout({
       </header>
 
       {/* 主内容区域 */}
-      <main className="flex-1 bg-gray-100 dark:bg-black pb-0">
+      <main className="flex-1 pb-0">
         {children}
       </main>
     </div>

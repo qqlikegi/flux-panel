@@ -110,12 +110,12 @@ export default function H5Layout({
   }, [location.pathname]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 dark:bg-black">
+    <div className="fz-canvas flex flex-col min-h-screen">
       {/* 顶部导航栏 */}
-      <header className="bg-white dark:bg-black shadow-sm border-b border-gray-200 dark:border-gray-600 h-14 safe-top flex-shrink-0 flex items-center justify-between px-4 relative z-10">
+      <header className="fz-chrome sticky top-0 h-14 safe-top flex-shrink-0 flex items-center justify-between px-4 z-20">
         <div className="flex items-center gap-2">
-          <Logo size={20} />
-          <h1 className="text-sm font-bold text-foreground">{siteConfig.name}</h1>
+          <Logo size={22} />
+          <h1 className="text-sm font-extrabold tracking-tight text-foreground">{siteConfig.name}</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ export default function H5Layout({
       </header>
 
       {/* 主内容区域 */}
-      <main className="flex-1 bg-gray-100 dark:bg-black">
+      <main className="flex-1">
         {children}
       </main>
 
@@ -131,7 +131,7 @@ export default function H5Layout({
       <div aria-hidden className="h-16 safe-bottom" />
 
       {/* 底部Tabbar */}
-      <nav className="bg-white dark:bg-black border-t border-gray-200 dark:border-gray-600 h-16 safe-bottom flex-shrink-0 flex items-center justify-around px-2 fixed bottom-0 left-0 right-0 z-30">
+      <nav className="fz-chrome border-t border-[var(--fz-hairline)] h-16 safe-bottom flex-shrink-0 flex items-center justify-around px-2 fixed bottom-0 left-0 right-0 z-30">
         {filteredTabItems.map((item) => {
           const isActive = location.pathname === item.path;
           return (
@@ -142,7 +142,7 @@ export default function H5Layout({
                 flex flex-col items-center justify-center flex-1 h-full
                 transition-colors duration-200 min-h-[44px]
                 ${isActive 
-                  ? 'text-primary-600 dark:text-primary-400' 
+                  ? 'text-foreground font-bold' 
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                 }
               `}

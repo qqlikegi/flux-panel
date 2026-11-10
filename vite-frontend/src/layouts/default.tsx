@@ -6,9 +6,9 @@ export default function DefaultLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex flex-col min-h-screen bg-white dark:bg-black">
+    <div className="fz-canvas fz-aurora relative flex flex-col min-h-screen">
       <Navbar />
-      <main className="container mx-auto max-w-7xl px-4 sm:px-6 flex-grow pt-4 sm:pt-16">
+      <main className="relative z-[1] container mx-auto max-w-7xl px-4 sm:px-6 flex-grow pt-4 sm:pt-10">
         {children}
       </main>
     </div>

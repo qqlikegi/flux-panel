@@ -64,7 +64,7 @@ export const Navbar = () => {
 
   return (
     <>
-      <HeroUINavbar maxWidth="xl" position="sticky" height="60px" className="shrink-0">
+      <HeroUINavbar maxWidth="xl" position="sticky" height="64px" className="shrink-0 bg-transparent backdrop-blur-none backdrop-saturate-100" isBlurred={false}>
         <NavbarContent className="basis-1/5 sm:basis-full" justify="start">
           <NavbarBrand className="gap-2 max-w-fit">
             <Link
@@ -72,8 +72,8 @@ export const Navbar = () => {
               color="foreground"
               href="/"
             >
-              <Logo size={24} />
-              <p className="font-bold text-inherit truncate">{appName}</p>
+              <Logo size={28} />
+              <p className="font-extrabold tracking-tight text-inherit truncate">{appName}</p>
             </Link>
           </NavbarBrand>
         </NavbarContent>

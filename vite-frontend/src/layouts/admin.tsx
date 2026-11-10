@@ -18,12 +18,147 @@ interface MenuItem {
   adminOnly?: boolean;
 }
 
+interface MenuGroup {
+  title?: string;
+  items: MenuItem[];
+}
+
 interface PasswordForm {
   newUsername: string;
   currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
+
+// 线性图标（24x24，描边）
+const NavIcon = ({ children }: { children: React.ReactNode }) => (
+  <svg
+    className="w-[18px] h-[18px] flex-shrink-0"
+    fill="none"
+    stroke="currentColor"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth={1.8}
+    viewBox="0 0 24 24"
+  >
+    {children}
+  </svg>
+);
+
+const SIDEBAR_KEY = 'fz_sidebar_collapsed';
+
+// 菜单分组配置
+const menuGroups: MenuGroup[] = [
+  {
+    items: [
+      {
+        path: '/dashboard',
+        label: '数据总览',
+        icon: (
+          <NavIcon>
+            <rect height="9" rx="1.5" width="7" x="3" y="3" />
+            <rect height="5" rx="1.5" width="7" x="14" y="3" />
+            <rect height="9" rx="1.5" width="7" x="14" y="12" />
+            <rect height="5" rx="1.5" width="7" x="3" y="16" />
+          </NavIcon>
+        ),
+      },
+    ],
+  },
+  {
+    title: '转发',
+    items: [
+      {
+        path: '/forward',
+        label: '转发管理',
+        icon: (
+          <NavIcon>
+            <path d="M8 3 4 7l4 4" />
+            <path d="M4 7h16" />
+            <path d="m16 21 4-4-4-4" />
+            <path d="M20 17H4" />
+          </NavIcon>
+        ),
+      },
+      {
+        path: '/tunnel',
+        label: '隧道管理',
+        adminOnly: true,
+        icon: (
+          <NavIcon>
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+          </NavIcon>
+        ),
+      },
+    ],
+  },
+  {
+    title: '节点',
+    items: [
+      {
+        path: '/node',
+        label: '节点监控',
+        adminOnly: true,
+        icon: (
+          <NavIcon>
+            <rect height="8" rx="2" width="20" x="2" y="2" />
+            <rect height="8" rx="2" width="20" x="2" y="14" />
+            <path d="M6 6h.01" />
+            <path d="M6 18h.01" />
+          </NavIcon>
+        ),
+      },
+      {
+        path: '/limit',
+        label: '限速管理',
+        adminOnly: true,
+        icon: (
+          <NavIcon>
+            <path d="m12 14 4-4" />
+            <path d="M3.34 19a10 10 0 1 1 17.32 0" />
+          </NavIcon>
+        ),
+      },
+    ],
+  },
+  {
+    title: '系统',
+    items: [
+      {
+        path: '/user',
+        label: '用户管理',
+        adminOnly: true,
+        icon: (
+          <NavIcon>
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </NavIcon>
+        ),
+      },
+      {
+        path: '/config',
+        label: '系统配置',
+        adminOnly: true,
+        icon: (
+          <NavIcon>
+            <path d="M4 21v-7" />
+            <path d="M4 10V3" />
+            <path d="M12 21v-9" />
+            <path d="M12 8V3" />
+            <path d="M20 21v-5" />
+            <path d="M20 12V3" />
+            <path d="M2 14h4" />
+            <path d="M10 8h4" />
+            <path d="M18 16h4" />
+          </NavIcon>
+        ),
+      },
+    ],
+  },
+];
 
 export default function AdminLayout({
   children,
@@ -36,6 +171,13 @@ export default function AdminLayout({
 
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(SIDEBAR_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const [username, setUsername] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -45,78 +187,6 @@ export default function AdminLayout({
     newPassword: '',
     confirmPassword: ''
   });
-
-  // 菜单项配置
-  const menuItems: MenuItem[] = [
-    {
-      path: '/dashboard',
-      label: '数据总览',
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-        </svg>
-      )
-    },
-    {
-      path: '/forward',
-      label: '转发管理',
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-        </svg>
-      )
-    },
-    {
-      path: '/tunnel',
-      label: '隧道管理',
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
-        </svg>
-      ),
-      adminOnly: true
-    },
-    {
-      path: '/node',
-      label: '节点监控',
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-        </svg>
-      ),
-      adminOnly: true
-    },
-    {
-      path: '/limit',
-      label: '限速管理',
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-        </svg>
-      ),
-      adminOnly: true
-    },
-    {
-      path: '/user',
-      label: '用户管理',
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-        </svg>
-      ),
-      adminOnly: true
-    },
-    {
-      path: '/config',
-      label: '系统配置',
-      icon: (
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-        </svg>
-      ),
-      adminOnly: true
-    }
-  ];
 
   // 检查移动端
   const checkMobile = () => {
@@ -129,7 +199,7 @@ export default function AdminLayout({
   useEffect(() => {
     // 获取用户信息
     const name = localStorage.getItem('name') || 'Admin';
-    
+
     // 兼容处理：如果没有admin字段，根据role_id判断（0为管理员）
     let adminFlag = localStorage.getItem('admin') === 'true';
     if (localStorage.getItem('admin') === null) {
@@ -138,7 +208,7 @@ export default function AdminLayout({
       // 补充设置admin字段，避免下次再次判断
       localStorage.setItem('admin', adminFlag.toString());
     }
-    
+
     setUsername(name);
     setIsAdmin(adminFlag);
 
@@ -165,6 +235,19 @@ export default function AdminLayout({
   // 隐藏移动端菜单
   const hideMobileMenu = () => {
     setMobileMenuVisible(false);
+  };
+
+  // 收起 / 展开侧栏
+  const toggleCollapsed = () => {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_KEY, next ? '1' : '0');
+      } catch {
+        // 忽略存储失败
+      }
+      return next;
+    });
   };
 
   // 菜单点击处理
@@ -236,131 +319,156 @@ export default function AdminLayout({
     });
   };
 
-  // 过滤菜单项（根据权限）
-  const filteredMenuItems = menuItems.filter(item => 
-    !item.adminOnly || isAdmin
-  );
+  // 过滤菜单项（根据权限），空分组不显示
+  const visibleGroups = menuGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.adminOnly || isAdmin),
+    }))
+    .filter((group) => group.items.length > 0);
+
+  const currentItem = menuGroups
+    .flatMap((group) => group.items)
+    .find((item) => item.path === location.pathname);
+  const pageTitle = currentItem?.label || '';
+
+  // 移动端抽屉始终展开显示文字
+  const isCollapsed = collapsed && !isMobile;
 
   return (
-          <div className={`flex ${isMobile ? 'min-h-screen' : 'h-screen'} bg-gray-100 dark:bg-black`}>
+    <div className={`fz-canvas flex ${isMobile ? 'min-h-screen' : 'h-screen'}`}>
       {/* 移动端遮罩层 */}
       {isMobile && mobileMenuVisible && (
-        <div 
-          className="fixed inset-0 backdrop-blur-sm bg-white/50 dark:bg-black/30 z-40"
+        <div
+          className="fixed inset-0 backdrop-blur-sm bg-white/50 dark:bg-black/40 z-40"
           onClick={hideMobileMenu}
         />
       )}
 
       {/* 左侧菜单栏 */}
-      <aside className={`
-        ${isMobile ? 'fixed' : 'relative'} 
-        ${isMobile && !mobileMenuVisible ? '-translate-x-full' : 'translate-x-0'}
-        ${isMobile ? 'w-64' : 'w-72'} 
-        bg-white dark:bg-black 
-        shadow-lg 
-        border-r border-gray-200 dark:border-gray-600
-        z-50 
-        transition-transform duration-300 ease-in-out
-        flex flex-col
-        ${isMobile ? 'h-screen' : 'h-full'}
-        ${isMobile ? 'top-0 left-0' : ''}
-      `}>
-                 {/* Logo 区域 */}
-         <div className="px-3 py-3 h-14 flex items-center">
-           <div className="flex items-center gap-2 w-full">
-             <Logo size={24} />
-             <div className="flex-1 min-w-0">
-               <h1 className="text-sm font-bold text-foreground overflow-hidden whitespace-nowrap">{siteConfig.name}</h1>
-               <p className="text-xs text-default-500">v{siteConfig.version}</p>
-             </div>
-           </div>
-         </div>
+      <aside
+        className={`
+          fz-chrome
+          ${isMobile ? 'fixed top-0 left-0 h-screen' : 'relative h-full'}
+          ${isMobile && !mobileMenuVisible ? '-translate-x-full' : 'translate-x-0'}
+          ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}
+          z-50 flex flex-col flex-shrink-0
+          transition-[width,transform] duration-300 ease-in-out
+        `}
+      >
+        {/* Logo 区域 */}
+        <div className={`h-16 flex items-center flex-shrink-0 ${isCollapsed ? 'justify-center px-2' : 'justify-between pl-5 pr-3'}`}>
+          {!isCollapsed && (
+            <div className="flex items-center gap-2 min-w-0">
+              <Logo size={26} />
+              <span className="text-[15px] font-extrabold tracking-tight text-foreground truncate">
+                {siteConfig.name}
+              </span>
+            </div>
+          )}
+          {!isMobile && (
+            <button
+              aria-label={isCollapsed ? '展开侧栏' : '收起侧栏'}
+              className="w-8 h-8 rounded-[10px] flex items-center justify-center text-default-500 hover:text-foreground hover:bg-[var(--fz-hover)] transition-colors"
+              title={isCollapsed ? '展开侧栏' : '收起侧栏'}
+              onClick={toggleCollapsed}
+            >
+              <NavIcon>
+                <rect height="18" rx="3" width="18" x="3" y="3" />
+                <path d="M9 3v18" />
+              </NavIcon>
+            </button>
+          )}
+        </div>
 
-                 {/* 菜单导航 */}
-         <nav className="flex-1 px-4 py-6 overflow-y-auto">
-           <ul className="space-y-1">
-            {filteredMenuItems.map((item) => {
-              const isActive = location.pathname === item.path;
-              return (
-                <li key={item.path}>
-                                     <button
-                     onClick={() => handleMenuClick(item.path)}
-                     className={`
-                       w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left
-                       transition-colors duration-200 min-h-[44px]
-                       ${isActive 
-                         ? 'bg-primary-100 dark:bg-primary-600/20 text-primary-600 dark:text-primary-300' 
-                         : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-900'
-                       }
-                     `}
-                   >
-                     <div className="flex-shrink-0">
-                       {item.icon}
-                     </div>
-                     <span className="font-medium text-sm">{item.label}</span>
-                   </button>
-                </li>
-              );
-            })}
-          </ul>
+        {/* 菜单导航 */}
+        <nav className="flex-1 px-3.5 pb-4 overflow-y-auto overflow-x-hidden">
+          {visibleGroups.map((group, index) => (
+            <div key={group.title || index}>
+              {group.title && !isCollapsed && (
+                <div className="fz-nav-group">{group.title}</div>
+              )}
+              {group.title && isCollapsed && (
+                <div className="my-2 mx-2 h-px bg-[var(--fz-hairline)]" />
+              )}
+              <ul className="space-y-0.5">
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.path;
+
+                  return (
+                    <li key={item.path}>
+                      <button
+                        className={`fz-nav-item ${isCollapsed ? 'justify-center !px-0' : ''}`}
+                        data-active={isActive}
+                        title={isCollapsed ? item.label : undefined}
+                        onClick={() => handleMenuClick(item.path)}
+                      >
+                        {item.icon}
+                        {!isCollapsed && <span>{item.label}</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
         </nav>
 
-                {/* 底部版权信息 */}
-        <div className="px-4 py-2 pb-4 mt-auto flex-shrink-0">
-          <div className="text-center">
-            <p className="text-xs text-gray-400 dark:text-gray-500">
-              Powered by{' '}
-              <a 
-                href="https://github.com/qqlikegi/forwardz" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-gray-500 dark:text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-              >
-                ForwardZ
-              </a>
-            </p>
+        {/* 底部版本信息 */}
+        {!isCollapsed && (
+          <div className="px-5 py-4 flex-shrink-0 text-xs text-default-400 flex items-center justify-between">
+            <a
+              className="hover:text-foreground transition-colors"
+              href="https://github.com/qqlikegi/forwardz"
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              ForwardZ
+            </a>
+            <span>v{siteConfig.version}</span>
           </div>
-        </div>
+        )}
       </aside>
 
       {/* 主内容区域 */}
-      <div className={`flex flex-col flex-1 ${isMobile ? 'min-h-0' : 'h-full overflow-hidden'}`}>
-                 {/* 顶部导航栏 */}
-         <header className="bg-white dark:bg-black shadow-md border-b border-gray-200 dark:border-gray-600 h-14 flex items-center justify-between px-4 lg:px-6 relative z-10">
-          <div className="flex items-center gap-4">
+      <div className={`flex flex-col flex-1 min-w-0 ${isMobile ? 'min-h-0' : 'h-full overflow-hidden'}`}>
+        {/* 顶部栏 */}
+        <header className="h-16 flex-shrink-0 flex items-center justify-between px-4 lg:px-8 relative z-10">
+          <div className="flex items-center gap-3 min-w-0">
             {/* 移动端菜单按钮 */}
             {isMobile && (
-              <Button
-                isIconOnly
-                variant="light"
-                onPress={toggleMobileMenu}
-                className="lg:hidden"
-              >
+              <Button isIconOnly variant="light" onPress={toggleMobileMenu}>
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} />
                 </svg>
               </Button>
             )}
+            <span className="text-sm font-semibold text-foreground truncate">{pageTitle}</span>
           </div>
 
           <div className="flex items-center gap-3">
             {/* 用户菜单 */}
-             <Dropdown placement="bottom-end">
-               <DropdownTrigger>
-                 <Button variant="light" className="text-sm font-medium text-foreground">
-                   {username}
-                   <svg className="w-4 h-4 ml-1" fill="currentColor" viewBox="0 0 20 20">
-                     <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                   </svg>
-                 </Button>
-               </DropdownTrigger>
+            <Dropdown placement="bottom-end">
+              <DropdownTrigger>
+                <button className="fz-pill h-10 pl-1.5 pr-3 flex items-center gap-2 text-sm font-medium text-foreground outline-none transition-transform active:scale-[0.98]">
+                  <span className="w-7 h-7 rounded-full bg-default-100 text-default-600 flex items-center justify-center text-xs font-bold uppercase">
+                    {(username || 'A').slice(0, 1)}
+                  </span>
+                  <span className="max-w-[140px] truncate">{username}</span>
+                  <svg className="w-4 h-4 text-default-500" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} viewBox="0 0 24 24">
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              </DropdownTrigger>
               <DropdownMenu aria-label="用户菜单">
                 <DropdownItem
                   key="change-password"
                   startContent={
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 8a6 6 0 01-7.743 5.743L10 14l-1 1-1 1H6v2H2v-4l4.257-4.257A6 6 0 1118 8zm-6-4a1 1 0 100 2 2 2 0 012 2 1 1 0 102 0 4 4 0 00-4-4z" clipRule="evenodd" />
-                    </svg>
+                    <NavIcon>
+                      <circle cx="7.5" cy="15.5" r="5.5" />
+                      <path d="m21 2-9.6 9.6" />
+                      <path d="m15.5 7.5 3 3L22 7l-3-3" />
+                    </NavIcon>
                   }
                   onPress={onOpen}
                 >
@@ -368,13 +476,15 @@ export default function AdminLayout({
                 </DropdownItem>
                 <DropdownItem
                   key="logout"
-                  startContent={
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
-                    </svg>
-                  }
                   className="text-danger"
                   color="danger"
+                  startContent={
+                    <NavIcon>
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <path d="m16 17 5-5-5-5" />
+                      <path d="M21 12H9" />
+                    </NavIcon>
+                  }
                   onPress={handleLogout}
                 >
                   退出登录
@@ -385,70 +495,75 @@ export default function AdminLayout({
         </header>
 
         {/* 主内容 */}
-        <main className={`flex-1 bg-gray-100 dark:bg-black ${isMobile ? '' : 'overflow-y-auto'}`}>
-          {children}
+        <main className={`flex-1 ${isMobile ? '' : 'overflow-y-auto'}`}>
+          <div className="mx-auto w-full max-w-[1400px] lg:px-4">
+            {pageTitle && (
+              <h1 className="fz-page-title px-3 lg:px-6 pt-6">{pageTitle}</h1>
+            )}
+            {children}
+          </div>
         </main>
       </div>
 
       {/* 修改密码弹窗 */}
-      <Modal 
-        isOpen={isOpen} 
+      <Modal
+        backdrop="blur"
+        isOpen={isOpen}
+        placement="center"
+        scrollBehavior="outside"
+        size="2xl"
         onOpenChange={() => {
           onOpenChange();
           resetPasswordForm();
         }}
-        size="2xl"
-        scrollBehavior="outside"
-        backdrop="blur"
-        placement="center"
       >
-                 <ModalContent>
-           {(onClose: () => void) => (
+        <ModalContent>
+          {(onClose: () => void) => (
             <>
               <ModalHeader className="flex flex-col gap-1">修改密码</ModalHeader>
               <ModalBody>
-                                 <div className="space-y-4">
-                   <Input
-                     label="新用户名"
-                     placeholder="请输入新用户名（至少3位）"
-                     value={passwordForm.newUsername}
-                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm(prev => ({ ...prev, newUsername: e.target.value }))}
-                     variant="bordered"
-                   />
-                   <Input
-                     label="当前密码"
-                     type="password"
-                     placeholder="请输入当前密码"
-                     value={passwordForm.currentPassword}
-                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
-                     variant="bordered"
-                   />
-                   <Input
-                     label="新密码"
-                     type="password"
-                     placeholder="请输入新密码（至少6位）"
-                     value={passwordForm.newPassword}
-                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
-                     variant="bordered"
-                   />
-                   <Input
-                     label="确认密码"
-                     type="password"
-                     placeholder="请再次输入新密码"
-                     value={passwordForm.confirmPassword}
-                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                     variant="bordered"
-                   />
-                 </div>
+                <div className="space-y-4">
+                  <Input
+                    label="新用户名"
+                    placeholder="请输入新用户名（至少3位）"
+                    value={passwordForm.newUsername}
+                    variant="bordered"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm(prev => ({ ...prev, newUsername: e.target.value }))}
+                  />
+                  <Input
+                    label="当前密码"
+                    placeholder="请输入当前密码"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    variant="bordered"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                  />
+                  <Input
+                    label="新密码"
+                    placeholder="请输入新密码（至少6位）"
+                    type="password"
+                    value={passwordForm.newPassword}
+                    variant="bordered"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                  />
+                  <Input
+                    label="确认密码"
+                    placeholder="请再次输入新密码"
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                    variant="bordered"
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  />
+                </div>
               </ModalBody>
               <ModalFooter>
                 <Button color="default" variant="light" onPress={onClose}>
                   取消
                 </Button>
-                <Button 
-                  color="primary" 
-                  onPress={handlePasswordSubmit}
+                <Button
+                  color="primary"
                   isLoading={passwordLoading}
+                  onPress={handlePasswordSubmit}
                 >
                   确定
                 </Button>
@@ -459,4 +574,4 @@ export default function AdminLayout({
       </Modal>
     </div>
   );
-} 
+}
