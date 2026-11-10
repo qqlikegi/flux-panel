@@ -307,7 +307,7 @@ export default function IndexPage() {
                   onClick={handleLogin}
                   isLoading={loading}
                   disabled={loading}
-                  className="mt-2 fz-prism"
+                  className="mt-2"
                 >
                   {loading ? (showCaptcha ? "验证中..." : "登录中...") : "登录"}
                 </Button>

@@ -14,10 +14,10 @@ export const Logo: React.FC<IconSvgProps> = ({
     width={size || height}
     {...props}
   >
-    <rect fill="currentColor" height="28" rx="9" width="28" x="2" y="2" />
+    <rect fill="#007AFF" height="28" rx="9" width="28" x="2" y="2" />
     <path
       d="M10.5 10.5h11l-11 11h11"
-      stroke="var(--fz-surface, #fff)"
+      stroke="#fff"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth="2.8"

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
+import { Select, SelectItem } from "@heroui/select";
 import toast from "react-hot-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -102,7 +102,7 @@ export default function AdminOverview() {
   const [data, setData] = useState<Overview | null>(null);
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<SortKey>("todayFlow");
-  const [keyword, setKeyword] = useState("");
+  const [picked, setPicked] = useState<Set<string>>(new Set());
 
   const load = async (quiet = false) => {
     if (!quiet) setLoading(true);
@@ -137,12 +137,18 @@ export default function AdminOverview() {
     return out;
   }, [data]);
 
+  // 下拉列表里的全部用户（按名称排序）
+  const allUsers = useMemo(
+    () => [...(data?.users || [])].sort((a, b) => a.user.localeCompare(b.user)),
+    [data],
+  );
+
+  // 没勾选任何用户时显示全部
   const users = useMemo(() => {
-    const kw = keyword.trim().toLowerCase();
     return [...(data?.users || [])]
-      .filter(u => !kw || u.user.toLowerCase().includes(kw))
+      .filter(u => picked.size === 0 || picked.has(String(u.id)))
       .sort((a, b) => b[sortKey] - a[sortKey]);
-  }, [data, sortKey, keyword]);
+  }, [data, sortKey, picked]);
 
   if (loading && !data) {
     return (
@@ -227,94 +233,90 @@ export default function AdminOverview() {
       </Card>
 
       {/* 用户流量 */}
-      <Card className="mb-6 border border-gray-200 dark:border-default-200 shadow-md">
-        <CardHeader className="pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 px-1">
           <div className="flex items-center gap-2">
-            <h2 className="text-lg lg:text-xl font-semibold text-foreground">用户流量</h2>
-            <span className="px-2 py-0.5 bg-default-100 text-default-600 rounded-full text-xs">{users.length}</span>
+            <h2 className="text-xl lg:text-2xl font-bold text-foreground">用户流量</h2>
+            <span className="fz-cell !rounded-full px-2.5 py-0.5 text-default-600 text-xs font-semibold">
+              {picked.size > 0 ? `${users.length} / ${allUsers.length}` : users.length}
+            </span>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Input size="sm" placeholder="搜索用户" value={keyword} onValueChange={setKeyword} className="sm:w-44" isClearable onClear={() => setKeyword("")} />
-            <div className="flex rounded-lg bg-default-100 p-0.5 flex-shrink-0">
+            <Select
+              aria-label="筛选用户"
+              className="flex-1 sm:flex-none sm:w-56"
+              placeholder="全部用户"
+              renderValue={(items) => (items.length === 1 ? items[0].textValue : `已选 ${items.length} 个用户`)}
+              selectedKeys={picked}
+              selectionMode="multiple"
+              size="sm"
+              onSelectionChange={(keys) =>
+                setPicked(keys === "all" ? new Set(allUsers.map(u => String(u.id))) : new Set(Array.from(keys).map(String)))
+              }
+            >
+              {allUsers.map(u => (
+                <SelectItem key={String(u.id)} textValue={u.user}>{u.user}</SelectItem>
+              ))}
+            </Select>
+            {picked.size > 0 && (
+              <Button className="flex-shrink-0" size="sm" variant="flat" onPress={() => setPicked(new Set())}>
+                全部
+              </Button>
+            )}
+            <div className="fz-segment flex-shrink-0">
               {sortTabs.map(t => (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => setSortKey(t.key)}
-                  className={`px-2.5 py-1 text-xs rounded-md transition-colors ${sortKey === t.key ? "bg-white dark:bg-default-300 text-foreground shadow-sm" : "text-default-500"}`}
-                >
+                <button key={t.key} data-active={sortKey === t.key} type="button" onClick={() => setSortKey(t.key)}>
                   {t.label}
                 </button>
               ))}
             </div>
           </div>
-        </CardHeader>
-        <CardBody className="pt-0">
-          {users.length === 0 ? (
-            <p className="text-center text-default-500 py-10">{keyword ? "没有匹配的用户" : "暂无用户"}</p>
-          ) : (
-            <>
-              {/* 桌面端表格 */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-default-500 border-b border-default-200">
-                      <th className="py-2 pr-3 font-medium">用户</th>
-                      <th className="py-2 px-3 font-medium text-right">今日流量</th>
-                      <th className="py-2 px-3 font-medium text-right">本月流量</th>
-                      <th className="py-2 px-3 font-medium">已用 / 套餐</th>
-                      <th className="py-2 px-3 font-medium text-right">转发</th>
-                      <th className="py-2 pl-3 font-medium text-right">到期</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map(u => {
-                      const e = expInfo(u);
-                      return (
-                        <tr key={u.id} className="border-b border-default-100 last:border-0">
-                          <td className="py-2.5 pr-3 font-medium text-foreground">{u.user}</td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">{formatFlow(u.todayFlow)}</td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">{formatFlow(u.monthFlow)}</td>
-                          <td className="py-2.5 px-3"><UsageBar used={u.usedFlow} limitGB={u.flow} /></td>
-                          <td className="py-2.5 px-3 text-right tabular-nums">{u.num === 99999 ? u.forwardCount : `${u.forwardCount} / ${u.num}`}</td>
-                          <td className="py-2.5 pl-3 text-right">
-                            <span className={`px-2 py-0.5 rounded-full text-xs whitespace-nowrap ${e.cls}`}>{e.text}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-              {/* 移动端卡片 */}
-              <div className="md:hidden space-y-3">
-                {users.map(u => {
-                  const e = expInfo(u);
-                  return (
-                    <div key={u.id} className="p-3 rounded-lg border border-default-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="font-medium text-foreground truncate">{u.user}</span>
-                        <span className={`px-2 py-0.5 rounded-full text-xs whitespace-nowrap ${e.cls}`}>{e.text}</span>
+        </div>
+
+        {users.length === 0 ? (
+          <Card>
+            <CardBody>
+              <p className="text-center text-default-500 py-10">暂无用户</p>
+            </CardBody>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 lg:gap-4">
+            {users.map(u => {
+              const e = expInfo(u);
+
+              return (
+                <Card key={u.id}>
+                  <CardBody className="p-4 gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold uppercase flex-shrink-0">
+                        {u.user.slice(0, 1)}
                       </div>
-                      <div className="grid grid-cols-2 gap-2 mb-2">
-                        <div>
-                          <p className="text-xs text-default-500">今日</p>
-                          <p className="text-sm font-semibold tabular-nums">{formatFlow(u.todayFlow)}</p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-default-500">本月</p>
-                          <p className="text-sm font-semibold tabular-nums">{formatFlow(u.monthFlow)}</p>
-                        </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground truncate">{u.user}</p>
+                        <p className="text-xs text-default-500">
+                          转发 {u.num === 99999 ? u.forwardCount : `${u.forwardCount} / ${u.num}`}
+                        </p>
                       </div>
-                      <UsageBar used={u.usedFlow} limitGB={u.flow} />
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs whitespace-nowrap ${e.cls}`}>{e.text}</span>
                     </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </CardBody>
-      </Card>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="fz-cell px-3 py-2">
+                        <p className="text-xs text-default-500">今日</p>
+                        <p className="text-base font-bold tabular-nums text-foreground">{formatFlow(u.todayFlow)}</p>
+                      </div>
+                      <div className="fz-cell px-3 py-2">
+                        <p className="text-xs text-default-500">本月</p>
+                        <p className="text-base font-bold tabular-nums text-foreground">{formatFlow(u.monthFlow)}</p>
+                      </div>
+                    </div>
+                    <UsageBar limitGB={u.flow} used={u.usedFlow} />
+                  </CardBody>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

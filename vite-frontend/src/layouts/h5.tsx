@@ -112,7 +112,7 @@ export default function H5Layout({
   return (
     <div className="fz-canvas flex flex-col min-h-screen">
       {/* 顶部导航栏 */}
-      <header className="fz-chrome sticky top-0 h-14 safe-top flex-shrink-0 flex items-center justify-between px-4 z-20">
+      <header className="fz-bar sticky top-0 h-14 safe-top flex-shrink-0 flex items-center justify-between px-4 z-20">
         <div className="flex items-center gap-2">
           <Logo size={22} />
           <h1 className="text-sm font-extrabold tracking-tight text-foreground">{siteConfig.name}</h1>
@@ -128,32 +128,27 @@ export default function H5Layout({
       </main>
 
       {/* 用于给固定 Tabbar 腾出空间的占位元素 */}
-      <div aria-hidden className="h-16 safe-bottom" />
+      <div aria-hidden className="h-24 safe-bottom" />
 
       {/* 底部Tabbar */}
-      <nav className="fz-chrome border-t border-[var(--fz-hairline)] h-16 safe-bottom flex-shrink-0 flex items-center justify-around px-2 fixed bottom-0 left-0 right-0 z-30">
-        {filteredTabItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <button
-              key={item.path}
-              onClick={() => handleTabClick(item.path)}
-              className={`
-                flex flex-col items-center justify-center flex-1 h-full
-                transition-colors duration-200 min-h-[44px]
-                ${isActive 
-                  ? 'text-foreground font-bold' 
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }
-              `}
-            >
-              <div className="flex-shrink-0 mb-1">
+      <nav className="pointer-events-none fixed inset-x-0 bottom-0 z-30 flex justify-center px-3 pb-[calc(var(--safe-area-bottom)+12px)]">
+        <div className="fz-bar fz-tabbar w-full max-w-md">
+          {filteredTabItems.map((item) => {
+            const isActive = location.pathname === item.path;
+
+            return (
+              <button
+                key={item.path}
+                className="fz-tab"
+                data-active={isActive}
+                onClick={() => handleTabClick(item.path)}
+              >
                 {item.icon}
-              </div>
-              <span className="text-xs font-medium">{item.label}</span>
-            </button>
-          );
-        })}
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </div>
       </nav>
 
     </div>

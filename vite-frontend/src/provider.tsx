@@ -37,7 +37,8 @@ export function Provider({ children }: ProvidersProps) {
                 borderRadius: '9999px',
                 padding: '8px 16px',
                 fontSize: '14px',
-                boxShadow: 'var(--fz-pill-shadow)',
+                boxShadow: 'var(--fz-bar-shadow)',
+                backdropFilter: 'blur(24px) saturate(180%)',
               },
               success: {
                 duration: 2000,

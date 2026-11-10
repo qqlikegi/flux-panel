@@ -31,7 +31,7 @@ export default function H5SimpleLayout({
   return (
     <div className="fz-canvas flex flex-col min-h-screen">
       {/* 顶部导航栏 */}
-      <header className="fz-chrome sticky top-0 h-14 safe-top flex-shrink-0 flex items-center justify-between px-4 z-20">
+      <header className="fz-bar sticky top-0 h-14 safe-top flex-shrink-0 flex items-center justify-between px-4 z-20">
         <div className="flex items-center gap-2">
           <Button
             isIconOnly

@@ -98,220 +98,336 @@ html, body {
 }
 
 /* =====================================================================
-   ForwardZ 界面主题：中性灰阶、玻璃质感侧栏、胶囊形控件、大圆角卡片
+   ForwardZ 界面主题：iOS 风格 —— 液态玻璃材质、浮空导航、胶囊按钮、连续圆角
    ===================================================================== */
 
-/* Tailwind 的 gray 色板改为不带蓝调的中性灰，深色模式下更干净 */
 @theme {
-  --color-gray-50: #fafafb;
-  --color-gray-100: #f3f3f5;
-  --color-gray-200: #e8e8eb;
-  --color-gray-300: #d5d5da;
-  --color-gray-400: #a4a4ac;
-  --color-gray-500: #75757e;
-  --color-gray-600: #3a3a41;
-  --color-gray-700: #27272c;
-  --color-gray-800: #1b1b1f;
-  --color-gray-900: #121214;
-  --color-gray-950: #0b0b0d;
-  --font-sans: "Inter Tight", "Inter", "SF Pro Display", -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  /* iOS 系统灰阶 */
+  --color-gray-50: #f9f9fb;
+  --color-gray-100: #f2f2f7;
+  --color-gray-200: #e5e5ea;
+  --color-gray-300: #d1d1d6;
+  --color-gray-400: #aeaeb2;
+  --color-gray-500: #8e8e93;
+  --color-gray-600: #48484a;
+  --color-gray-700: #3a3a3c;
+  --color-gray-800: #2c2c2e;
+  --color-gray-900: #1c1c1e;
+  --color-gray-950: #0d0d0f;
+  /* 连续圆角体系：内层 12-18px，外层卡片 26px */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.375rem;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
 :root {
-  --fz-canvas: #fafafb;
-  --fz-canvas-grad: linear-gradient(#ffffff, #f4f4f6);
-  --fz-strong: #111216;
-  --fz-text: #17181c;
-  --fz-secondary: #43444b;
-  --fz-muted: #7b7c85;
-  --fz-hairline: rgba(20, 22, 28, 0.10);
-  --fz-hover: rgba(20, 22, 28, 0.05);
-  --fz-input: #f1f1f3;
+  --fz-accent: #007aff;
+  --fz-green: #34c759;
+  --fz-red: #ff3b30;
+  --fz-canvas: #f2f2f7;
+  --fz-mesh:
+    radial-gradient(60% 50% at 8% 0%, rgba(0, 122, 255, 0.20) 0%, transparent 70%),
+    radial-gradient(45% 40% at 100% 4%, rgba(255, 105, 180, 0.16) 0%, transparent 70%),
+    radial-gradient(50% 45% at 85% 100%, rgba(52, 199, 89, 0.14) 0%, transparent 70%),
+    radial-gradient(50% 50% at 0% 100%, rgba(175, 82, 222, 0.14) 0%, transparent 70%);
+  --fz-strong: #000000;
+  --fz-text: #1c1c1e;
+  --fz-secondary: rgba(60, 60, 67, 0.78);
+  --fz-muted: rgba(60, 60, 67, 0.6);
+  --fz-hairline: rgba(60, 60, 67, 0.14);
+  --fz-fill: rgba(120, 120, 128, 0.14);
+  --fz-fill-2: rgba(120, 120, 128, 0.09);
+  --fz-fill-hover: rgba(120, 120, 128, 0.22);
   --fz-surface: #ffffff;
-  --fz-chrome: rgba(255, 255, 255, 0.55);
-  --fz-chrome-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.9), 1px 0 0 rgba(20, 22, 28, 0.06), 10px 0 28px -22px rgba(20, 22, 28, 0.2);
-  --fz-card-shadow: 0 0 0 1px rgba(20, 22, 28, 0.05), 0 1px 2px rgba(20, 22, 28, 0.06), 0 14px 32px -18px rgba(20, 22, 28, 0.28);
-  --fz-float-shadow: 0 0 0 1px rgba(20, 22, 28, 0.08), 0 2px 6px -2px rgba(20, 22, 28, 0.12), 0 24px 48px -20px rgba(20, 22, 28, 0.35);
-  --fz-pill-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 0 0 1px rgba(20, 22, 28, 0.10), 0 6px 16px -10px rgba(20, 22, 28, 0.28);
-  --fz-glow: radial-gradient(ellipse 55% 45% at 8% 0%, rgba(255, 255, 255, 0.95) 0%, transparent 70%);
-  --fz-prism: linear-gradient(90deg, #f0b84c, #ee7268, #8a7ce0, #3d9be6, #62d2b8);
-  --fz-prism-glow: 0.35;
-  --toaster-bg: #ffffff;
-  --toaster-color: #17181c;
-  --toaster-border: rgba(20, 22, 28, 0.10);
+  /* 液态玻璃 */
+  --fz-glass-bg: linear-gradient(155deg, rgba(255, 255, 255, 0.78) 0%, rgba(255, 255, 255, 0.56) 45%, rgba(255, 255, 255, 0.48) 100%);
+  --fz-glass-blur: blur(28px) saturate(180%);
+  --fz-glass-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.95),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.45),
+    0 0 0 1px rgba(60, 60, 67, 0.05),
+    0 12px 32px -18px rgba(30, 40, 80, 0.35);
+  --fz-bar-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.72) 0%, rgba(255, 255, 255, 0.5) 100%);
+  --fz-bar-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.95),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.5),
+    0 0 0 1px rgba(60, 60, 67, 0.06),
+    0 18px 40px -16px rgba(30, 40, 80, 0.4);
+  --fz-float-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(250, 250, 252, 0.86) 100%);
+  --fz-float-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 0 1px rgba(60, 60, 67, 0.08),
+    0 30px 70px -24px rgba(20, 30, 60, 0.5);
+  --fz-selected: rgba(255, 255, 255, 0.9);
+  --fz-selected-shadow: 0 0 0 1px rgba(60, 60, 67, 0.06), 0 6px 14px -8px rgba(30, 40, 80, 0.35);
+  --toaster-bg: rgba(255, 255, 255, 0.86);
+  --toaster-color: #1c1c1e;
+  --toaster-border: rgba(60, 60, 67, 0.1);
 }
 
 html.dark {
-  --fz-canvas: #0b0b0d;
-  --fz-canvas-grad: linear-gradient(#0e0e11, #09090b);
-  --fz-strong: #f7f7f8;
-  --fz-text: #ededef;
-  --fz-secondary: #c2c2c9;
-  --fz-muted: #8a8a94;
-  --fz-hairline: rgba(255, 255, 255, 0.09);
-  --fz-hover: rgba(255, 255, 255, 0.06);
-  --fz-input: #1b1b1f;
-  --fz-surface: #1b1b20;
-  --fz-chrome: rgba(18, 18, 21, 0.6);
-  --fz-chrome-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.05), 10px 0 28px -22px rgba(0, 0, 0, 0.8);
-  --fz-card-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07), 0 14px 32px -18px rgba(0, 0, 0, 0.7);
-  --fz-float-shadow: 0 0 0 1px rgba(255, 255, 255, 0.09), 0 24px 48px -20px rgba(0, 0, 0, 0.85);
-  --fz-pill-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 0 0 1px rgba(255, 255, 255, 0.10), 0 6px 16px -10px rgba(0, 0, 0, 0.6);
-  --fz-glow: radial-gradient(ellipse 55% 45% at 8% 0%, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
-  --fz-prism-glow: 0.22;
-  --toaster-bg: #1b1b1f;
-  --toaster-color: #ededef;
-  --toaster-border: rgba(255, 255, 255, 0.10);
+  --fz-accent: #0a84ff;
+  --fz-green: #30d158;
+  --fz-red: #ff453a;
+  --fz-canvas: #000000;
+  --fz-mesh:
+    radial-gradient(60% 50% at 8% 0%, rgba(10, 132, 255, 0.26) 0%, transparent 70%),
+    radial-gradient(45% 40% at 100% 4%, rgba(255, 55, 95, 0.16) 0%, transparent 70%),
+    radial-gradient(50% 45% at 85% 100%, rgba(48, 209, 88, 0.12) 0%, transparent 70%),
+    radial-gradient(50% 50% at 0% 100%, rgba(191, 90, 242, 0.16) 0%, transparent 70%);
+  --fz-strong: #ffffff;
+  --fz-text: #f2f2f7;
+  --fz-secondary: rgba(235, 235, 245, 0.78);
+  --fz-muted: rgba(235, 235, 245, 0.6);
+  --fz-hairline: rgba(235, 235, 245, 0.14);
+  --fz-fill: rgba(120, 120, 128, 0.3);
+  --fz-fill-2: rgba(120, 120, 128, 0.2);
+  --fz-fill-hover: rgba(120, 120, 128, 0.42);
+  --fz-surface: #2c2c2e;
+  --fz-glass-bg: linear-gradient(155deg, rgba(72, 72, 78, 0.46) 0%, rgba(44, 44, 48, 0.42) 45%, rgba(30, 30, 34, 0.4) 100%);
+  --fz-glass-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.16),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.4),
+    0 14px 34px -18px rgba(0, 0, 0, 0.9);
+  --fz-bar-bg: linear-gradient(180deg, rgba(64, 64, 70, 0.55) 0%, rgba(36, 36, 40, 0.5) 100%);
+  --fz-bar-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.18),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.45),
+    0 18px 40px -16px rgba(0, 0, 0, 0.9);
+  --fz-float-bg: linear-gradient(180deg, rgba(50, 50, 54, 0.92) 0%, rgba(34, 34, 38, 0.9) 100%);
+  --fz-float-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.14),
+    0 0 0 1px rgba(0, 0, 0, 0.5),
+    0 30px 70px -24px rgba(0, 0, 0, 0.95);
+  --fz-selected: rgba(120, 120, 128, 0.42);
+  --fz-selected-shadow: inset 1px 1px 0 rgba(255, 255, 255, 0.12);
+  --toaster-bg: rgba(44, 44, 46, 0.86);
+  --toaster-color: #f2f2f7;
+  --toaster-border: rgba(235, 235, 245, 0.12);
 }
 
 body {
   font-family: var(--font-sans);
   background-color: var(--fz-canvas);
-  background-image: var(--fz-canvas-grad);
-  background-attachment: fixed;
   color: var(--fz-text);
   -webkit-font-smoothing: antialiased;
 }
 
-/* 页面画布：渐变底 + 左上角柔光 */
-.fz-canvas {
-  background: var(--fz-glow), var(--fz-canvas-grad);
-  background-color: var(--fz-canvas);
-}
-
-/* 登录 / 初始化页左上角的彩色光晕 */
-.fz-aurora::before {
+/* 画布：固定在视口上的柔和彩色光斑，玻璃材质透出它的颜色 */
+.fz-canvas { position: relative; isolation: isolate; }
+.fz-canvas::before {
   content: "";
   position: fixed;
-  inset: -20% 40% 40% -20%;
-  background:
-    radial-gradient(closest-side at 30% 35%, rgba(240, 184, 76, 0.55), transparent),
-    radial-gradient(closest-side at 55% 30%, rgba(98, 210, 184, 0.45), transparent),
-    radial-gradient(closest-side at 70% 45%, rgba(138, 124, 224, 0.45), transparent),
-    radial-gradient(closest-side at 35% 60%, rgba(238, 114, 104, 0.40), transparent);
-  filter: blur(70px);
-  opacity: var(--fz-prism-glow);
+  inset: 0;
+  z-index: -1;
+  background: var(--fz-mesh);
+  background-color: var(--fz-canvas);
   pointer-events: none;
-  z-index: 0;
 }
 
-/* 侧栏的玻璃质感 */
-.fz-chrome {
-  background: var(--fz-chrome);
-  -webkit-backdrop-filter: blur(24px) saturate(1.6);
-  backdrop-filter: blur(24px) saturate(1.6);
-  box-shadow: var(--fz-chrome-shadow);
+/* ---------- 液态玻璃材质 ---------- */
+.fz-glass {
+  background: var(--fz-glass-bg);
+  -webkit-backdrop-filter: var(--fz-glass-blur);
+  backdrop-filter: var(--fz-glass-blur);
+  box-shadow: var(--fz-glass-shadow);
+}
+/* 浮空的导航条 / 底栏 / 侧栏 */
+.fz-bar {
+  background: var(--fz-bar-bg);
+  -webkit-backdrop-filter: blur(30px) saturate(190%);
+  backdrop-filter: blur(30px) saturate(190%);
+  box-shadow: var(--fz-bar-shadow);
 }
 
+/* 侧栏菜单项 */
 .fz-nav-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   width: 100%;
-  height: 36px;
-  padding: 0 10px;
-  border-radius: 13px;
-  font-size: 14px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 15px;
   font-weight: 500;
   color: var(--fz-secondary);
   transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
   white-space: nowrap;
   overflow: hidden;
 }
-.fz-nav-item:hover { background: var(--fz-hover); color: var(--fz-strong); }
+.fz-nav-item:hover { background: var(--fz-fill-2); color: var(--fz-strong); }
 .fz-nav-item[data-active="true"] {
-  background: var(--fz-surface);
-  color: var(--fz-strong);
-  font-weight: 700;
-  box-shadow: 0 0 0 1px var(--fz-hairline), 0 6px 14px -10px rgba(20, 22, 28, 0.45);
+  background: var(--fz-selected);
+  color: var(--fz-accent);
+  font-weight: 600;
+  box-shadow: var(--fz-selected-shadow);
 }
 .fz-nav-group {
-  padding: 14px 10px 6px;
-  font-size: 11px;
-  font-weight: 500;
+  padding: 16px 12px 6px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--fz-muted);
   white-space: nowrap;
 }
 
-/* 悬浮胶囊（顶栏账户按钮等） */
-.fz-pill {
-  background: var(--fz-surface);
-  box-shadow: var(--fz-pill-shadow);
+/* 底部浮空标签栏 */
+.fz-tabbar {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 5px;
   border-radius: 9999px;
+  pointer-events: auto;
+}
+.fz-tab {
+  flex: 1 1 0;
+  min-width: 58px;
+  height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border-radius: 9999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--fz-secondary);
+  transition: background-color 0.2s, color 0.2s;
+}
+.fz-tab[data-active="true"] {
+  background: var(--fz-fill);
+  color: var(--fz-accent);
 }
 
+/* 大标题 */
 .fz-page-title {
-  font-size: 30px;
+  font-size: 34px;
   line-height: 1.15;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--fz-strong);
 }
+@media (max-width: 768px) {
+  .fz-page-title { font-size: 28px; }
+}
 
-/* 彩虹描边主按钮 */
-.fz-prism {
-  border: 1.5px solid transparent !important;
-  background-image: linear-gradient(var(--fz-surface), var(--fz-surface)), var(--fz-prism) !important;
-  background-origin: border-box !important;
-  background-clip: padding-box, border-box !important;
-  color: var(--fz-strong) !important;
-  font-weight: 600 !important;
-  box-shadow: 0 8px 22px -14px rgba(138, 124, 224, 0.9), 0 8px 22px -14px rgba(240, 184, 76, 0.9);
+/* 卡片里的信息格 */
+.fz-cell {
+  background: var(--fz-fill-2);
+  border-radius: 14px;
+}
+/* 分段控件 */
+.fz-segment {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 9999px;
+  background: var(--fz-fill);
+}
+.fz-segment > button {
+  padding: 5px 14px;
+  border-radius: 9999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fz-secondary);
+  transition: background-color 0.15s, color 0.15s;
+}
+.fz-segment > button[data-active="true"] {
+  background: var(--fz-selected);
+  color: var(--fz-strong);
+  font-weight: 600;
+  box-shadow: var(--fz-selected-shadow);
 }
 
 /* ---------- HeroUI 组件统一外观 ---------- */
 
-/* 卡片、表格容器、弹出层 */
+/* 卡片、表格容器：液态玻璃 */
 .bg-content1.rounded-large {
-  box-shadow: var(--fz-card-shadow) !important;
+  background: var(--fz-glass-bg) !important;
+  -webkit-backdrop-filter: var(--fz-glass-blur);
+  backdrop-filter: var(--fz-glass-blur);
+  box-shadow: var(--fz-glass-shadow) !important;
   border-color: transparent !important;
 }
+/* 弹窗、下拉菜单、气泡：更实的玻璃，保证可读 */
 section[role="dialog"].bg-content1,
 div[role="dialog"] > .bg-content1,
-div[role="dialog"].bg-content1 {
+div[role="dialog"].bg-content1,
+[data-slot="content"].bg-content1 {
+  background: var(--fz-float-bg) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(190%);
+  backdrop-filter: blur(40px) saturate(190%);
   box-shadow: var(--fz-float-shadow) !important;
 }
 
-/* 按钮：胶囊形 */
+/* 按钮：一律胶囊形 */
 button.tap-highlight-transparent[class*="rounded-"],
 a.tap-highlight-transparent[class*="rounded-"][role="button"] {
   border-radius: 9999px;
   font-weight: 500;
 }
-
-/* 浅色填充按钮（主色 / 默认色）：白色胶囊 + 细描边阴影 */
+/* 浅色填充按钮：iOS 灰色按钮（灰底 + 彩色文字） */
 button.tap-highlight-transparent.bg-primary\/20,
-button.tap-highlight-transparent.bg-default\/40 {
-  background: var(--fz-surface);
-  color: var(--fz-strong);
-  box-shadow: var(--fz-pill-shadow);
+button.tap-highlight-transparent.bg-default\/40,
+button.tap-highlight-transparent.bg-secondary\/20,
+button.tap-highlight-transparent.bg-success\/20,
+button.tap-highlight-transparent.bg-warning\/20,
+button.tap-highlight-transparent.bg-danger\/20 {
+  background: var(--fz-fill);
+  transition: background-color 0.15s, transform 0.15s;
+}
+button.tap-highlight-transparent.bg-primary\/20 { color: var(--fz-accent); }
+button.tap-highlight-transparent.bg-default\/40 { color: var(--fz-text); }
+button.tap-highlight-transparent.bg-danger\/20 { color: var(--fz-red); }
+button.tap-highlight-transparent.bg-primary\/20:hover,
+button.tap-highlight-transparent.bg-default\/40:hover,
+button.tap-highlight-transparent.bg-secondary\/20:hover,
+button.tap-highlight-transparent.bg-success\/20:hover,
+button.tap-highlight-transparent.bg-warning\/20:hover,
+button.tap-highlight-transparent.bg-danger\/20:hover {
+  background: var(--fz-fill-hover);
+  opacity: 1 !important;
 }
 
-/* 输入框 / 下拉框：胶囊形、浅灰底、细描边 */
+/* 输入框 / 下拉框：iOS 填充样式 */
 [data-slot="input-wrapper"],
 button[data-slot="trigger"] {
-  border-radius: 9999px !important;
-  background-color: var(--fz-input) !important;
-  border-color: var(--fz-hairline) !important;
+  border-radius: 14px !important;
+  background-color: var(--fz-fill-2) !important;
+  border-color: transparent !important;
   box-shadow: none !important;
-  padding-inline: 16px !important;
 }
-[data-slot="input-wrapper"]:has(textarea) { border-radius: 1.1rem !important; }
 [data-slot="input-wrapper"]:focus-within,
 button[data-slot="trigger"][data-focus="true"],
 button[data-slot="trigger"][data-open="true"] {
-  border-color: var(--fz-strong) !important;
+  border-color: var(--fz-accent) !important;
 }
-[data-invalid="true"] [data-slot="input-wrapper"] { border-color: hsl(var(--heroui-danger)) !important; }
+[data-invalid="true"] [data-slot="input-wrapper"] { border-color: var(--fz-red) !important; }
+
+/* 开关：打开时 iOS 绿 */
+label[data-selected="true"] > [data-slot="wrapper"] { background-color: var(--fz-green) !important; }
 
 /* 表格：透明表头、细分隔线 */
 th[role="columnheader"] {
   background: transparent !important;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--fz-muted) !important;
   border-bottom: 1px solid var(--fz-hairline);
   border-radius: 0 !important;
+}
+
+/* 页面里的小信息块：去掉描边，统一成填充圆角格 */
+.rounded { border-radius: 12px; }
+.bg-content1 .rounded.border,
+.bg-content1 .rounded-lg.border,
+.bg-content1 .rounded-md.border {
+  border-color: transparent;
 }
 
 /* 滚动条 */

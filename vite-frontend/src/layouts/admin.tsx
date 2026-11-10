@@ -348,11 +348,11 @@ export default function AdminLayout({
       {/* 左侧菜单栏 */}
       <aside
         className={`
-          fz-chrome
-          ${isMobile ? 'fixed top-0 left-0 h-screen' : 'relative h-full'}
-          ${isMobile && !mobileMenuVisible ? '-translate-x-full' : 'translate-x-0'}
-          ${isCollapsed ? 'w-[68px]' : 'w-[248px]'}
-          z-50 flex flex-col flex-shrink-0
+          fz-bar rounded-[28px]
+          ${isMobile ? 'fixed top-3 left-3 bottom-3' : 'relative my-3 ml-3'}
+          ${isMobile && !mobileMenuVisible ? '-translate-x-[120%]' : 'translate-x-0'}
+          ${isCollapsed ? 'w-[72px]' : 'w-[244px]'}
+          z-50 flex flex-col flex-shrink-0 overflow-hidden
           transition-[width,transform] duration-300 ease-in-out
         `}
       >
@@ -369,7 +369,7 @@ export default function AdminLayout({
           {!isMobile && (
             <button
               aria-label={isCollapsed ? '展开侧栏' : '收起侧栏'}
-              className="w-8 h-8 rounded-[10px] flex items-center justify-center text-default-500 hover:text-foreground hover:bg-[var(--fz-hover)] transition-colors"
+              className="w-8 h-8 rounded-[10px] flex items-center justify-center text-default-500 hover:text-foreground hover:bg-[var(--fz-fill-2)] transition-colors"
               title={isCollapsed ? '展开侧栏' : '收起侧栏'}
               onClick={toggleCollapsed}
             >
@@ -382,7 +382,7 @@ export default function AdminLayout({
         </div>
 
         {/* 菜单导航 */}
-        <nav className="flex-1 px-3.5 pb-4 overflow-y-auto overflow-x-hidden">
+        <nav className="flex-1 px-3 pb-4 overflow-y-auto overflow-x-hidden">
           {visibleGroups.map((group, index) => (
             <div key={group.title || index}>
               {group.title && !isCollapsed && (
@@ -450,8 +450,8 @@ export default function AdminLayout({
             {/* 用户菜单 */}
             <Dropdown placement="bottom-end">
               <DropdownTrigger>
-                <button className="fz-pill h-10 pl-1.5 pr-3 flex items-center gap-2 text-sm font-medium text-foreground outline-none transition-transform active:scale-[0.98]">
-                  <span className="w-7 h-7 rounded-full bg-default-100 text-default-600 flex items-center justify-center text-xs font-bold uppercase">
+                <button className="fz-bar rounded-full h-11 pl-1.5 pr-3.5 flex items-center gap-2 text-sm font-medium text-foreground outline-none transition-transform active:scale-[0.97]">
+                  <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold uppercase">
                     {(username || 'A').slice(0, 1)}
                   </span>
                   <span className="max-w-[140px] truncate">{username}</span>

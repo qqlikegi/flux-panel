@@ -560,7 +560,7 @@ export default function TunnelPage() {
                       <div className="pt-2 border-t border-divider">
                         <div className="flex items-center justify-center gap-2 text-xs">
                           {/* 入口节点 */}
-                          <div className="flex items-center gap-1 px-2 py-1 bg-primary-50 dark:bg-primary-100/20 rounded border border-primary-200 dark:border-primary-300/20">
+                          <div className="flex items-center gap-1 px-2.5 py-1 bg-primary-50 dark:bg-primary-100/20 rounded-full">
                             <svg className="w-3 h-3 text-primary-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm2 2v8h10V6H5z" clipRule="evenodd" />
                             </svg>
@@ -575,7 +575,7 @@ export default function TunnelPage() {
                           </svg>
                           
                           {/* 转发链 */}
-                          <div className="flex items-center gap-1 px-2 py-1 bg-secondary-50 dark:bg-secondary-100/20 rounded border border-secondary-200 dark:border-secondary-300/20">
+                          <div className="flex items-center gap-1 px-2.5 py-1 bg-secondary-50 dark:bg-secondary-100/20 rounded-full">
                             <svg className="w-3 h-3 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
                             </svg>
@@ -590,7 +590,7 @@ export default function TunnelPage() {
                           </svg>
                           
                           {/* 出口节点 */}
-                          <div className="flex items-center gap-1 px-2 py-1 bg-success-50 dark:bg-success-100/20 rounded border border-success-200 dark:border-success-300/20">
+                          <div className="flex items-center gap-1 px-2.5 py-1 bg-success-50 dark:bg-success-100/20 rounded-full">
                             <svg className="w-3 h-3 text-success-600" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
                             </svg>

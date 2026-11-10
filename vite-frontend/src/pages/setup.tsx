@@ -96,7 +96,7 @@ export default function SetupPage() {
                 <Button
                   color="primary"
                   size="lg"
-                  className="mt-2 fz-prism"
+                  className="mt-2"
                   onPress={submit}
                   isLoading={loading}
                   isDisabled={!canSubmit}
