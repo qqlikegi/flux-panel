@@ -145,10 +145,10 @@ export default function ForwardPage() {
   // 显示模式状态 - 从localStorage读取，默认为平铺显示
   const [viewMode, setViewMode] = useState<'grouped' | 'direct'>(() => {
     try {
-      const savedMode = localStorage.getItem('forward-view-mode');
-      return (savedMode as 'grouped' | 'direct') || 'direct';
+      const savedMode = localStorage.getItem('forward-view-mode-v2');
+      return (savedMode as 'grouped' | 'direct') || 'grouped';
     } catch {
-      return 'direct';
+      return 'grouped';
     }
   });
   

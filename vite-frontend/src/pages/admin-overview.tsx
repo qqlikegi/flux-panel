@@ -184,7 +184,7 @@ export default function AdminOverview() {
           value={formatFlow(d.totalUsedFlow)}
           sub={`共 ${d.userCount} 个用户（本计费周期）`}
           color="bg-[var(--fz-fill)] text-[var(--fz-accent)]"
-          icon={icon("M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z")}
+          icon={icon("M5.2 8.6h2v7.9h-2zM2.7 8.6h7L6.2 4.2zM12.8 3.5h2v7.9h-2zM10.3 11.4h7l-3.5 4.4z")}
         />
         <StatCard
           label="今日流量"

@@ -28,12 +28,25 @@ export function UserFilter({
     () => [...users].sort((a, b) => a.name.localeCompare(b.name)),
     [users],
   );
-  // “已选 99 个用户”约 14 个字符宽，作为下限
-  const chars = Math.min(28, Math.max(14, ...sorted.map((u) => textWidth(u.name))));
+  // 未选时用基准宽度（正好），选中后按当前显示的文案估宽，名字长了就跟着变宽
+  const pickedName =
+    picked.size === 1
+      ? sorted.find((u) => picked.has(String(u.id)))?.name ?? ""
+      : "";
+  const need =
+    picked.size === 0
+      ? 14
+      : picked.size === 1
+        ? textWidth(pickedName)
+        : textWidth(`已选 ${picked.size} 个用户`);
+  const chars = Math.min(30, Math.max(14, need));
 
   return (
     <div className="flex items-center gap-2 flex-shrink-0">
-      <div style={{ width: `calc(${chars}ch + 4.25rem)` }}>
+      <div
+        className="transition-[width] duration-200 ease-out"
+        style={{ width: `calc(${chars}ch + 4.25rem)` }}
+      >
         <Select
           aria-label="筛选用户"
           placeholder="全部用户"

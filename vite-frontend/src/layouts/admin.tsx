@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from "@heroui/button";
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/dropdown";
@@ -170,6 +170,8 @@ export default function AdminLayout({
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
   const [isMobile, setIsMobile] = useState(false);
+  const userMenuBtnRef = useRef<HTMLButtonElement>(null);
+  const [userMenuWidth, setUserMenuWidth] = useState<number | undefined>(undefined);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -448,9 +450,17 @@ export default function AdminLayout({
 
           <div className="flex items-center gap-3">
             {/* 用户菜单 */}
-            <Dropdown placement="bottom-end">
+            <Dropdown
+              placement="bottom-end"
+              classNames={{ content: "p-1 min-w-0" }}
+              onOpenChange={(open) => {
+                if (open && userMenuBtnRef.current) {
+                  setUserMenuWidth(userMenuBtnRef.current.getBoundingClientRect().width);
+                }
+              }}
+            >
               <DropdownTrigger>
-                <button className="fz-bar rounded-full h-11 pl-1.5 pr-3.5 flex items-center gap-2 text-sm font-medium text-foreground outline-none transition-transform active:scale-[0.97]">
+                <button ref={userMenuBtnRef} className="fz-bar rounded-full h-11 pl-1.5 pr-3.5 flex items-center gap-2 text-sm font-medium text-foreground outline-none transition-transform active:scale-[0.97]">
                   <span className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold uppercase">
                     {(username || 'A').slice(0, 1)}
                   </span>
@@ -460,7 +470,10 @@ export default function AdminLayout({
                   </svg>
                 </button>
               </DropdownTrigger>
-              <DropdownMenu aria-label="用户菜单">
+              <DropdownMenu
+                aria-label="用户菜单"
+                style={userMenuWidth ? { width: userMenuWidth, minWidth: userMenuWidth } : undefined}
+              >
                 <DropdownItem
                   key="change-password"
                   startContent={
