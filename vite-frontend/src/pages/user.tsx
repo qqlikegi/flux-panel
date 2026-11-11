@@ -111,7 +111,7 @@ export default function UserPage() {
   const [searchKeyword] = useState('');
   // 用户列表筛选：不勾选表示显示全部
   const [picked, setPicked] = useState<Set<string>>(new Set());
-  const [pagination, setPagination] = useState<PaginationType>({
+  const [pagination] = useState<PaginationType>({
     current: 1,
     size: 10,
     total: 0
