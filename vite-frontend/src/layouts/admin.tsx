@@ -171,7 +171,6 @@ export default function AdminLayout({
 
   const [isMobile, setIsMobile] = useState(false);
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
-  const [userMenuWidth, setUserMenuWidth] = useState<number | undefined>(undefined);
   const [mobileMenuVisible, setMobileMenuVisible] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try {
@@ -452,11 +451,11 @@ export default function AdminLayout({
             {/* 用户菜单 */}
             <Dropdown
               placement="bottom-end"
-              classNames={{ content: "p-0 min-w-0" }}
+              classNames={{ content: "fz-user-menu" }}
               onOpenChange={(open) => {
                 if (!open || !userMenuBtnRef.current) return;
-                const w = userMenuBtnRef.current.getBoundingClientRect().width;
-                setUserMenuWidth(w);
+                const w = userMenuBtnRef.current.offsetWidth;
+                document.documentElement.style.setProperty('--fz-user-menu-w', `${w}px`);
               }}
             >
               <DropdownTrigger>
@@ -474,7 +473,6 @@ export default function AdminLayout({
                 <DropdownItem
                   key="change-password"
                   className="gap-2 px-2.5 py-2 text-[13px]"
-                  style={userMenuWidth ? { width: userMenuWidth } : undefined}
                   startContent={
                     <NavIcon>
                       <circle cx="7.5" cy="15.5" r="5.5" />
@@ -489,7 +487,6 @@ export default function AdminLayout({
                 <DropdownItem
                   key="logout"
                   className="gap-2 px-2.5 py-2 text-[13px] text-danger"
-                  style={userMenuWidth ? { width: userMenuWidth } : undefined}
                   color="danger"
                   startContent={
                     <NavIcon>

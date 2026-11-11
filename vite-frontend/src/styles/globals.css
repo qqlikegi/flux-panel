@@ -241,6 +241,14 @@ body {
   box-shadow: var(--fz-glass-shadow);
 }
 /* 内容卡片：玻璃底 + 发丝边 + 大圆角，替代「长方形套椭圆」的旧卡片 */
+
+/* 右上角用户菜单：宽度跟随按钮，由 admin 布局把实测宽度写到 --fz-user-menu-w */
+[data-slot="content"].fz-user-menu {
+  width: var(--fz-user-menu-w, 120px);
+  min-width: 0;
+  padding: 4px;
+}
+
 .fz-card {
   background: var(--fz-glass-bg);
   -webkit-backdrop-filter: var(--fz-glass-blur);

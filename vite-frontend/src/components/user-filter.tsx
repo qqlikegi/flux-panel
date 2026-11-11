@@ -33,19 +33,20 @@ export function UserFilter({
     picked.size === 1
       ? sorted.find((u) => picked.has(String(u.id)))?.name ?? ""
       : "";
+  const PLACEHOLDER = "全部用户";
   const need =
     picked.size === 0
-      ? 14
+      ? textWidth(PLACEHOLDER)
       : picked.size === 1
-        ? textWidth(pickedName)
+        ? Math.max(textWidth(PLACEHOLDER), textWidth(pickedName))
         : textWidth(`已选 ${picked.size} 个用户`);
-  const chars = Math.min(30, Math.max(14, need));
+  const chars = Math.min(30, need);
 
   return (
     <div className="flex items-center gap-2 flex-shrink-0">
       <div
         className="transition-[width] duration-200 ease-out"
-        style={{ width: `calc(${chars}ch + 4.25rem)` }}
+        style={{ width: `calc(${chars}ch + 2.55rem)` }}
       >
         <Select
           aria-label="筛选用户"
