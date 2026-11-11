@@ -49,7 +49,8 @@ import {
   getSpeedLimitList,
   resetUserFlow
 } from '@/api';
-import { SearchIcon, EditIcon, DeleteIcon, UserIcon, SettingsIcon } from '@/components/icons';
+import { EditIcon, DeleteIcon, UserIcon, SettingsIcon } from '@/components/icons';
+import { UserFilter } from '@/components/user-filter';
 import { parseDate } from "@internationalized/date";
 
 
@@ -107,7 +108,9 @@ export default function UserPage() {
   // 状态管理
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchKeyword] = useState('');
+  // 用户列表筛选：不勾选表示显示全部
+  const [picked, setPicked] = useState<Set<string>>(new Set());
   const [pagination, setPagination] = useState<PaginationType>({
     current: 1,
     size: 10,
@@ -240,12 +243,9 @@ export default function UserPage() {
     }
   };
 
-  // 用户管理操作
-  const handleSearch = () => {
-    setPagination(prev => ({ ...prev, current: 1 }));
-    loadUsers();
-  };
+  const shownUsers = picked.size === 0 ? users : users.filter(u => picked.has(String(u.id)));
 
+  // 用户管理操作
   const handleAdd = () => {
     setIsEdit(false);
     setUserForm({
@@ -535,31 +535,12 @@ export default function UserPage() {
         <div className="flex items-center gap-3">
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-          <div className="flex items-center gap-3 flex-1 max-w-md">
-            <Input
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              placeholder="搜索用户名"
-              startContent={<SearchIcon className="w-4 h-4 text-default-400" />}
-              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-              className="flex-1"
-              classNames={{
-                base: "bg-default-100",
-                input: "bg-transparent",
-                inputWrapper: "bg-default-100 border-2 border-default-200 hover:border-default-300 focus-within:border-primary data-[hover=true]:border-default-300"
-              }}
-            />
-            <Button
-              onClick={handleSearch}
-              variant="solid"
-              color="primary"
-              isIconOnly
-              className="min-h-10 w-10"
-            >
-              <SearchIcon className="w-4 h-4" />
-            </Button>
-          </div>
+        <div className="flex flex-row gap-3 items-center justify-between">
+          <UserFilter
+            picked={picked}
+            users={users.map(u => ({ id: u.id, name: u.user }))}
+            onChange={setPicked}
+          />
           
           <Button
               variant="flat"
@@ -580,7 +561,7 @@ export default function UserPage() {
             <span className="text-default-600">正在加载...</span>
           </div>
         </div>
-      ) : users.length === 0 ? (
+      ) : shownUsers.length === 0 ? (
         <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
           <CardBody className="text-center py-16">
             <div className="flex flex-col items-center gap-4">
@@ -596,7 +577,7 @@ export default function UserPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {users.map((user) => {
+          {shownUsers.map((user) => {
             const userStatus = getUserStatus(user);
             const expStatus = user.expTime ? getExpireStatus(user.expTime) : null;
             const usedFlow = calculateUserTotalUsedFlow(user);

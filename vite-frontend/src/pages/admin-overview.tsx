@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Button } from "@heroui/button";
-import { Select, SelectItem } from "@heroui/select";
+import { UserFilter } from "@/components/user-filter";
 import toast from "react-hot-toast";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -241,28 +241,12 @@ export default function AdminOverview() {
               {picked.size > 0 ? `${users.length} / ${allUsers.length}` : users.length}
             </span>
           </div>
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Select
-              aria-label="筛选用户"
-              className="flex-1 sm:flex-none sm:w-56"
-              placeholder="全部用户"
-              renderValue={(items) => (items.length === 1 ? items[0].textValue : `已选 ${items.length} 个用户`)}
-              selectedKeys={picked}
-              selectionMode="multiple"
-              size="sm"
-              onSelectionChange={(keys) =>
-                setPicked(keys === "all" ? new Set(allUsers.map(u => String(u.id))) : new Set(Array.from(keys).map(String)))
-              }
-            >
-              {allUsers.map(u => (
-                <SelectItem key={String(u.id)} textValue={u.user}>{u.user}</SelectItem>
-              ))}
-            </Select>
-            {picked.size > 0 && (
-              <Button className="flex-shrink-0" size="sm" variant="flat" onPress={() => setPicked(new Set())}>
-                全部
-              </Button>
-            )}
+          <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
+            <UserFilter
+              picked={picked}
+              users={allUsers.map(u => ({ id: u.id, name: u.user }))}
+              onChange={setPicked}
+            />
             <div className="fz-segment flex-shrink-0">
               {sortTabs.map(t => (
                 <button key={t.key} data-active={sortKey === t.key} type="button" onClick={() => setSortKey(t.key)}>
