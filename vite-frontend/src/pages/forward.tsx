@@ -1196,7 +1196,7 @@ export default function ForwardPage() {
     const strategyDisplay = getStrategyDisplay(forward.strategy);
     
     return (
-      <Card key={forward.id} className="group shadow-sm border border-divider hover:shadow-md transition-shadow duration-200">
+      <Card key={forward.id} className="fz-card group">
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start w-full">
             <div className="flex-1 min-w-0">
@@ -1441,7 +1441,7 @@ export default function ForwardPage() {
           userGroups.length > 0 ? (
             <div className="space-y-6">
               {userGroups.map((userGroup) => (
-                <Card key={userGroup.userId || 'unknown'} className="shadow-sm border border-divider w-full overflow-hidden">
+                <Card key={userGroup.userId || 'unknown'} className="fz-card w-full overflow-hidden">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between w-full min-w-0">
                       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1503,7 +1503,7 @@ export default function ForwardPage() {
             </div>
           ) : (
             /* 空状态 */
-            <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+            <Card className="fz-card">
               <CardBody className="text-center py-16">
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-16 h-16 bg-default-100 rounded-full flex items-center justify-center">
@@ -1543,7 +1543,7 @@ export default function ForwardPage() {
             </DndContext>
           ) : (
             /* 空状态 */
-            <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+            <Card className="fz-card">
               <CardBody className="text-center py-16">
                 <div className="flex flex-col items-center gap-4">
                   <div className="w-16 h-16 bg-default-100 rounded-full flex items-center justify-center">

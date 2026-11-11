@@ -160,7 +160,7 @@ export default function ProfilePage() {
 
       <div className="space-y-6 flex-1">
         {/* 用户信息卡片 */}
-        <Card className="border border-gray-200 dark:border-default-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="fz-card">
           <CardBody className="p-4">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center">
@@ -188,7 +188,7 @@ export default function ProfilePage() {
         </Card>
 
         {/* 功能网格 */}
-        <Card className="border border-gray-200 dark:border-default-200 shadow-md hover:shadow-lg transition-shadow">
+        <Card className="fz-card">
           <CardBody className="p-4">
             <div className="grid grid-cols-3 gap-3">
               {/* 管理员功能 */}

@@ -562,7 +562,7 @@ export default function UserPage() {
           </div>
         </div>
       ) : shownUsers.length === 0 ? (
-        <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+        <Card className="fz-card">
           <CardBody className="text-center py-16">
             <div className="flex flex-col items-center gap-4">
               <div className="w-16 h-16 bg-default-100 rounded-full flex items-center justify-center">
@@ -586,7 +586,7 @@ export default function UserPage() {
             return (
               <Card 
                 key={user.id} 
-                className="shadow-sm border border-divider hover:shadow-md transition-shadow duration-200"
+                className="fz-card"
               >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start w-full">

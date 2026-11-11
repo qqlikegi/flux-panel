@@ -79,7 +79,7 @@ function UsageBar({ used, limitGB }: { used: number; limitGB: number }) {
 
 function StatCard({ label, value, sub, color, icon }: { label: string; value: string; sub?: string; color: string; icon: React.ReactNode }) {
   return (
-    <Card className="border border-gray-200 dark:border-default-200 shadow-md">
+    <Card className="fz-card">
       <CardBody className="p-3 lg:p-4">
         <div className="flex items-center justify-between">
           <p className="text-xs lg:text-sm text-default-600 truncate">{label}</p>
@@ -176,32 +176,32 @@ export default function AdminOverview() {
           label="在线节点"
           value={`${d.nodeOnline} / ${d.nodeTotal}`}
           sub={d.nodeTotal - d.nodeOnline > 0 ? `${d.nodeTotal - d.nodeOnline} 个节点离线` : "全部在线"}
-          color="bg-green-100 text-green-600 dark:bg-green-500/20 dark:text-green-400"
+          color="bg-[var(--fz-fill)] text-[var(--fz-green)]"
           icon={icon("M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm14 1a1 1 0 11-2 0 1 1 0 012 0zM2 13a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2zm14 1a1 1 0 11-2 0 1 1 0 012 0z")}
         />
         <StatCard
           label="总使用流量"
           value={formatFlow(d.totalUsedFlow)}
           sub={`共 ${d.userCount} 个用户（本计费周期）`}
-          color="bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400"
+          color="bg-[var(--fz-fill)] text-[var(--fz-accent)]"
           icon={icon("M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z")}
         />
         <StatCard
           label="今日流量"
           value={formatFlow(d.todayFlow)}
-          color="bg-purple-100 text-purple-600 dark:bg-purple-500/20 dark:text-purple-400"
+          color="bg-[var(--fz-fill)] text-[var(--fz-accent)]"
           icon={icon("M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z")}
         />
         <StatCard
           label="本月流量"
           value={formatFlow(d.monthFlow)}
-          color="bg-orange-100 text-orange-600 dark:bg-orange-500/20 dark:text-orange-400"
+          color="bg-[var(--fz-fill)] text-[var(--fz-accent)]"
           icon={icon("M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z")}
         />
       </div>
 
       {/* 24 小时流量 */}
-      <Card className="mb-6 border border-gray-200 dark:border-default-200 shadow-md">
+      <Card className="fz-card mb-6">
         <CardHeader className="pb-3 flex items-center justify-between">
           <h2 className="text-lg lg:text-xl font-semibold text-foreground">24小时流量统计</h2>
           <Button size="sm" variant="flat" onPress={() => load()} isLoading={loading}>
@@ -213,19 +213,19 @@ export default function AdminOverview() {
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={chartData} accessibilityLayer={false}>
                 <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={{ stroke: "#e5e7eb", strokeWidth: 1 }} />
-                <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={{ stroke: "#e5e7eb", strokeWidth: 1 }} tickFormatter={axisFlow} />
+                <XAxis dataKey="time" tick={{ fontSize: 12 }} tickLine={false} axisLine={{ stroke: "var(--fz-hairline)", strokeWidth: 1 }} />
+                <YAxis tick={{ fontSize: 12 }} tickLine={false} axisLine={{ stroke: "var(--fz-hairline)", strokeWidth: 1 }} tickFormatter={axisFlow} />
                 <Tooltip
                   content={({ active, payload, label }) =>
                     active && payload && payload.length ? (
-                      <div className="bg-white dark:bg-default-100 border border-default-200 rounded-lg shadow-lg p-3">
+                      <div className="fz-card p-3" style={{ borderRadius: 14 }}>
                         <p className="font-medium text-foreground">{`时间: ${label}`}</p>
                         <p className="text-primary">{`流量: ${formatFlow((payload[0]?.value as number) || 0)}`}</p>
                       </div>
                     ) : null
                   }
                 />
-                <Line type="monotone" dataKey="flow" stroke="#8b5cf6" strokeWidth={3} dot={false} activeDot={{ r: 4, stroke: "#8b5cf6", strokeWidth: 2, fill: "#fff" }} />
+                <Line type="monotone" dataKey="flow" stroke="var(--fz-accent)" strokeWidth={3} dot={false} activeDot={{ r: 4, stroke: "var(--fz-accent)", strokeWidth: 2, fill: "#fff" }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -258,7 +258,7 @@ export default function AdminOverview() {
         </div>
 
         {users.length === 0 ? (
-          <Card>
+          <Card className="fz-card">
             <CardBody>
               <p className="text-center text-default-500 py-10">暂无用户</p>
             </CardBody>
@@ -269,7 +269,7 @@ export default function AdminOverview() {
               const e = expInfo(u);
 
               return (
-                <Card key={u.id}>
+                <Card key={u.id} className="fz-card">
                   <CardBody className="p-4 gap-3">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center font-bold uppercase flex-shrink-0">

@@ -627,7 +627,7 @@ function UserDashboard() {
 
                           {/* 响应式统计卡片 */}
          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6 lg:mb-8">
-           <Card className="border border-gray-200 dark:border-default-200 shadow-md hover:shadow-lg transition-shadow">
+           <Card className="fz-card">
              <CardBody className="p-3 lg:p-4">
                <div className="flex flex-col space-y-2">
                  <div className="flex items-center justify-between">
@@ -643,7 +643,7 @@ function UserDashboard() {
              </CardBody>
            </Card>
 
-           <Card className="border border-gray-200 dark:border-default-200 shadow-md hover:shadow-lg transition-shadow">
+           <Card className="fz-card">
              <CardBody className="p-3 lg:p-4">
                <div className="flex flex-col space-y-2">
                  <div className="flex items-center justify-between">
@@ -675,7 +675,7 @@ function UserDashboard() {
              </CardBody>
            </Card>
 
-           <Card className="border border-gray-200 dark:border-default-200 shadow-md hover:shadow-lg transition-shadow">
+           <Card className="fz-card">
              <CardBody className="p-3 lg:p-4">
                <div className="flex flex-col space-y-2">
                  <div className="flex items-center justify-between">
@@ -691,7 +691,7 @@ function UserDashboard() {
              </CardBody>
            </Card>
 
-           <Card className="border border-gray-200 dark:border-default-200 shadow-md hover:shadow-lg transition-shadow">
+           <Card className="fz-card">
              <CardBody className="p-3 lg:p-4">
                <div className="flex flex-col space-y-2">
                  <div className="flex items-center justify-between">
@@ -715,7 +715,7 @@ function UserDashboard() {
          </div>
 
          {/* 24小时流量统计图表 */}
-         <Card className="mb-6 lg:mb-8 border border-gray-200 dark:border-default-200 shadow-md">
+         <Card className="fz-card mb-6 lg:mb-8">
            <CardHeader className="pb-3">
              <div className="flex items-center gap-2">
                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
@@ -792,7 +792,7 @@ function UserDashboard() {
 
                  {/* 隧道权限 - 管理员不显示 */}
          {!isAdmin && (
-          <Card className="mb-6 lg:mb-8 border border-gray-200 dark:border-default-200 shadow-md">
+          <Card className="fz-card mb-6 lg:mb-8">
            <CardHeader className="pb-3">
              <div className="flex items-center gap-2">
                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
@@ -817,7 +817,7 @@ function UserDashboard() {
                  {userTunnels.map((tunnel) => {
                    const tunnelExpStatus = getExpStatus(tunnel.expTime);
                    return (
-                     <div key={tunnel.id} className="border border-gray-200 dark:border-default-100 rounded-lg p-3 lg:p-4 hover:shadow-md transition-shadow">
+                     <div key={tunnel.id} className="fz-cell p-3 lg:p-4">
                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-3">
                          <div>
                            <h3 className="font-semibold text-foreground">{tunnel.tunnelName} ID: {tunnel.id}</h3>
@@ -871,7 +871,7 @@ function UserDashboard() {
          )}
 
                  {/* 转发配置 */}
-         <Card className="border border-gray-200 dark:border-default-200 shadow-md">
+         <Card className="fz-card">
            <CardHeader className="pb-3">
              <div className="flex items-center gap-2">
                <svg className="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
@@ -894,7 +894,7 @@ function UserDashboard() {
             ) : (
                              <div className="space-y-4">
                  {groupedForwards().map((group) => (
-                   <div key={group.tunnelName} className="border border-gray-200 dark:border-default-100 rounded-lg p-3 lg:p-4">
+                   <div key={group.tunnelName} className="fz-cell border-0 p-3 lg:p-4">
                      <div className="flex items-center justify-between mb-3">
                        <h3 className="font-semibold text-foreground">{group.tunnelName}</h3>
                        <span className="px-2 py-1 bg-primary-100 dark:bg-primary-500/20 text-primary-700 dark:text-primary-300 rounded-md text-sm">
@@ -904,7 +904,7 @@ function UserDashboard() {
                      
                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
                        {group.forwards.map((forward) => (
-                         <div key={forward.id} className="bg-white dark:bg-default-100/50 border border-gray-200 dark:border-default-200 rounded-lg p-3 hover:shadow-md transition-shadow">
+                         <div key={forward.id} className="fz-cell p-3">
                           <div className="space-y-3">
                             <div>
                               <h4 className="font-medium text-foreground text-sm mb-2 truncate">{forward.name}</h4>
@@ -927,7 +927,7 @@ function UserDashboard() {
                               </div>
                             </div>
                             
-                            <div className="pt-2 border-t border-gray-200 dark:border-default-200">
+                            <div className="pt-2 border-t border-[var(--fz-hairline)]">
                               <div className="grid grid-cols-3 gap-1 text-xs">
                                 <div className="text-center">
                                   <div className="text-default-500 mb-1">上传</div>

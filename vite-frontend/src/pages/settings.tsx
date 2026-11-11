@@ -79,7 +79,7 @@ export const SettingsPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* 顶部导航 */}
-      <div className="bg-white dark:bg-black border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-[var(--fz-surface)] border-b border-[var(--fz-hairline)]">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-3">
             <Button
@@ -101,7 +101,7 @@ export const SettingsPage = () => {
       <div className="max-w-4xl mx-auto px-4 py-6">
         <div className="space-y-6">
           {/* 添加新地址 */}
-          <Card className="border border-gray-200 dark:border-gray-700">
+          <Card className="fz-card">
             <CardBody className="p-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">添加新面板地址</h2>
               <div className="space-y-4">
@@ -127,7 +127,7 @@ export const SettingsPage = () => {
           </Card>
 
           {/* 地址列表 */}
-          <Card className="border border-gray-200 dark:border-gray-700">
+          <Card className="fz-card">
             <CardBody className="p-6">
               <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">已保存的面板地址</h2>
               {panelAddresses.length === 0 ? (
@@ -135,7 +135,7 @@ export const SettingsPage = () => {
               ) : (
                 <div className="space-y-3">
                   {panelAddresses.map((panel, index) => (
-                    <div key={index} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                    <div key={index} className="fz-cell p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">

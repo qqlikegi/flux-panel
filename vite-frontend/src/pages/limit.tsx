@@ -244,7 +244,7 @@ export default function LimitPage() {
         {rules.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
             {rules.map((rule) => (
-              <Card key={rule.id} className="shadow-sm border border-gray-200 dark:border-gray-700">
+              <Card key={rule.id} className="fz-card">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start w-full">
                     <div>
@@ -316,7 +316,7 @@ export default function LimitPage() {
           </div>
         ) : (
           /* 空状态 */
-          <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+          <Card className="fz-card">
             <CardBody className="text-center py-16">
               <div className="flex flex-col items-center gap-4">
                 <div className="w-16 h-16 bg-default-100 rounded-full flex items-center justify-center">

@@ -127,6 +127,7 @@ html, body {
   --fz-accent: #007aff;
   --fz-green: #34c759;
   --fz-red: #ff3b30;
+  --fz-orange: #ff9500;
   --fz-canvas: #f2f2f7;
   --fz-mesh:
     radial-gradient(60% 50% at 8% 0%, rgba(0, 122, 255, 0.20) 0%, transparent 70%),
@@ -173,6 +174,7 @@ html.dark {
   --fz-accent: #0a84ff;
   --fz-green: #30d158;
   --fz-red: #ff453a;
+  --fz-orange: #ff9f0a;
   --fz-canvas: #000000;
   --fz-mesh:
     radial-gradient(60% 50% at 8% 0%, rgba(10, 132, 255, 0.26) 0%, transparent 70%),
@@ -237,6 +239,15 @@ body {
   -webkit-backdrop-filter: var(--fz-glass-blur);
   backdrop-filter: var(--fz-glass-blur);
   box-shadow: var(--fz-glass-shadow);
+}
+/* 内容卡片：玻璃底 + 发丝边 + 大圆角，替代「长方形套椭圆」的旧卡片 */
+.fz-card {
+  background: var(--fz-glass-bg);
+  -webkit-backdrop-filter: var(--fz-glass-blur);
+  backdrop-filter: var(--fz-glass-blur);
+  box-shadow: var(--fz-glass-shadow);
+  border: 0.5px solid var(--fz-hairline);
+  border-radius: 22px;
 }
 /* 浮空的导航条 / 底栏 / 侧栏 */
 .fz-bar {

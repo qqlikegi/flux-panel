@@ -337,7 +337,7 @@ export default function ConfigPage() {
   return (
     
       <div className="px-3 lg:px-6 py-8 max-w-4xl">
-        <Card className="shadow-md">
+        <Card className="fz-card">
           <CardHeader className="pb-4">
             <div className="flex justify-between items-center w-full">
               <div>

@@ -534,7 +534,7 @@ export default function TunnelPage() {
               const typeDisplay = getTypeDisplay(tunnel.type);
               
               return (
-                <Card key={tunnel.id} className="shadow-sm border border-divider hover:shadow-md transition-shadow duration-200">
+                <Card key={tunnel.id} className="fz-card">
                   <CardHeader className="pb-2">
                     <div className="flex justify-between items-start w-full">
                       <div className="flex-1 min-w-0">
@@ -672,7 +672,7 @@ export default function TunnelPage() {
           </div>
         ) : (
           /* 空状态 */
-          <Card className="shadow-sm border border-gray-200 dark:border-gray-700">
+          <Card className="fz-card">
             <CardBody className="text-center py-16">
               <div className="flex flex-col items-center gap-4">
                 <div className="w-16 h-16 bg-default-100 rounded-full flex items-center justify-center">
