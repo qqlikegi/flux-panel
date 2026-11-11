@@ -50,6 +50,12 @@ export function UserFilter({
         <Select
           aria-label="筛选用户"
           placeholder="全部用户"
+          classNames={{
+            trigger: "h-9 min-h-9 !rounded-full px-3.5 shadow-none",
+            innerWrapper: "!bg-transparent",
+            value: "text-[13px] !bg-transparent",
+            selectorIcon: "w-4 h-4 text-default-400",
+          }}
           renderValue={(items) =>
             items.length === 1 ? items[0].textValue : `已选 ${items.length} 个用户`
           }

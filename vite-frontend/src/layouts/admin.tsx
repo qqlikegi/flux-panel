@@ -452,11 +452,11 @@ export default function AdminLayout({
             {/* 用户菜单 */}
             <Dropdown
               placement="bottom-end"
-              classNames={{ content: "p-1 min-w-0" }}
+              classNames={{ content: "p-0 min-w-0" }}
               onOpenChange={(open) => {
-                if (open && userMenuBtnRef.current) {
-                  setUserMenuWidth(userMenuBtnRef.current.getBoundingClientRect().width);
-                }
+                if (!open || !userMenuBtnRef.current) return;
+                const w = userMenuBtnRef.current.getBoundingClientRect().width;
+                setUserMenuWidth(w);
               }}
             >
               <DropdownTrigger>
@@ -470,12 +470,11 @@ export default function AdminLayout({
                   </svg>
                 </button>
               </DropdownTrigger>
-              <DropdownMenu
-                aria-label="用户菜单"
-                style={userMenuWidth ? { width: userMenuWidth, minWidth: userMenuWidth } : undefined}
-              >
+              <DropdownMenu aria-label="用户菜单" className="w-full">
                 <DropdownItem
                   key="change-password"
+                  className="gap-2 px-2.5 py-2 text-[13px]"
+                  style={userMenuWidth ? { width: userMenuWidth } : undefined}
                   startContent={
                     <NavIcon>
                       <circle cx="7.5" cy="15.5" r="5.5" />
@@ -489,7 +488,8 @@ export default function AdminLayout({
                 </DropdownItem>
                 <DropdownItem
                   key="logout"
-                  className="text-danger"
+                  className="gap-2 px-2.5 py-2 text-[13px] text-danger"
+                  style={userMenuWidth ? { width: userMenuWidth } : undefined}
                   color="danger"
                   startContent={
                     <NavIcon>
