@@ -243,6 +243,17 @@ body {
 /* 内容卡片：玻璃底 + 发丝边 + 大圆角，替代「长方形套椭圆」的旧卡片 */
 
 /* 右上角用户菜单：宽度跟随按钮，由 admin 布局把实测宽度写到 --fz-user-menu-w */
+
+/* 弹出层里的选项：圆角与外框同心（外框 26px，内边距 4px → 22px），避免「里面弧度不一样」 */
+[data-slot="content"] {
+  --fz-pop-radius: 26px;
+  --fz-pop-pad: 4px;
+}
+[data-slot="content"] [role="option"],
+[data-slot="content"] [role="menuitem"] {
+  border-radius: calc(var(--fz-pop-radius) - var(--fz-pop-pad)) !important;
+}
+
 [data-slot="content"].fz-user-menu {
   width: var(--fz-user-menu-w, 120px);
   min-width: 0;
